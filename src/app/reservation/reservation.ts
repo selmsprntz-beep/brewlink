@@ -1,3 +1,4 @@
+
 import { DatePipe, NgClass } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -45,21 +46,103 @@ export class Reservation implements OnInit, OnDestroy {
   mine = signal<ReservationModel[]>([]);
   loadingMine = signal(false);
 
+  // Confirmation modal
+  confirmationOpen = signal(false);
+
   ngOnInit(): void {
     this.loadMine();
-    this.timer = setInterval(() => this.loadMine(false), 20000);
+
+    this.timer = setInterval(() => {
+      this.loadMine(false);
+    }, 20000);
   }
 
   ngOnDestroy(): void {
-    clearInterval(this.timer);
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
   }
 
-  /* ---------- Saved codes (localStorage) ---------- */
+  /* ---------- Contact Number ---------- */
+
+// Block letters and special characters while typing.
+onContactKeydown(event: KeyboardEvent): void {
+  const allowedKeys = [
+    'Backspace',
+    'Delete',
+    'Tab',
+    'ArrowLeft',
+    'ArrowRight',
+    'Home',
+    'End',
+  ];
+
+  // Allow navigation and editing shortcuts (Ctrl+A, Ctrl+C, etc.)
+  if (
+    allowedKeys.includes(event.key) ||
+    event.ctrlKey ||
+    event.metaKey
+  ) {
+    return;
+  }
+
+  // Allow digits only.
+  if (!/^[0-9]$/.test(event.key)) {
+    event.preventDefault();
+    return;
+  }
+
+  const input = event.target as HTMLInputElement;
+
+  // Prevent more than 11 digits.
+  if (
+    input.value.length >= 11 &&
+    input.selectionStart === input.selectionEnd
+  ) {
+    event.preventDefault();
+  }
+}
+
+// Clean pasted content and accept numbers only.
+onContactPaste(event: ClipboardEvent): void {
+  event.preventDefault();
+
+  const input = event.target as HTMLInputElement;
+  const pastedText = event.clipboardData?.getData('text') ?? '';
+  const numbers = pastedText.replace(/[^0-9]/g, '');
+
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+
+  const currentValue = this.form.contact_number;
+
+  const newValue = (
+    currentValue.slice(0, start) +
+    numbers +
+    currentValue.slice(end)
+  ).slice(0, 11);
+
+  this.form.contact_number = newValue;
+}
+
+// Final input protection.
+onContactNumberChange(value: string): void {
+  this.form.contact_number = String(value ?? '')
+    .replace(/[^0-9]/g, '')
+    .slice(0, 11);
+}
+
+  /* ---------- Saved Codes ---------- */
 
   private readCodes(): string[] {
     try {
-      const raw = JSON.parse(localStorage.getItem(MY_RESERVATIONS_KEY) ?? '[]');
-      return Array.isArray(raw) ? raw.filter((c) => typeof c === 'string') : [];
+      const raw = JSON.parse(
+        localStorage.getItem(MY_RESERVATIONS_KEY) ?? '[]'
+      );
+
+      return Array.isArray(raw)
+        ? raw.filter((c) => typeof c === 'string')
+        : [];
     } catch {
       return [];
     }
@@ -67,9 +150,12 @@ export class Reservation implements OnInit, OnDestroy {
 
   private writeCodes(codes: string[]): void {
     try {
-      localStorage.setItem(MY_RESERVATIONS_KEY, JSON.stringify(codes.slice(0, MAX_SAVED)));
+      localStorage.setItem(
+        MY_RESERVATIONS_KEY,
+        JSON.stringify(codes.slice(0, MAX_SAVED))
+      );
     } catch {
-      /* ignore */
+      // Ignore localStorage errors.
     }
   }
 
@@ -79,8 +165,13 @@ export class Reservation implements OnInit, OnDestroy {
   }
 
   removeMine(code: string): void {
-    this.writeCodes(this.readCodes().filter((c) => c !== code));
-    this.mine.update((list) => list.filter((r) => r.reference_code !== code));
+    this.writeCodes(
+      this.readCodes().filter((c) => c !== code)
+    );
+
+    this.mine.update((list) =>
+      list.filter((r) => r.reference_code !== code)
+    );
   }
 
   loadMine(showLoading = true): void {
@@ -91,25 +182,48 @@ export class Reservation implements OnInit, OnDestroy {
       return;
     }
 
-    if (showLoading && this.mine().length === 0) this.loadingMine.set(true);
+    if (showLoading && this.mine().length === 0) {
+      this.loadingMine.set(true);
+    }
 
     forkJoin(
       codes.map((code) =>
         this.api.trackReservation(code).pipe(
           map((r) => ({ code, r, gone: false })),
-          // 404 = wala na sa database, tangtangon sa lista. Ang uban nga error (network) i-skip lang.
-          catchError((err) => of({ code, r: null as ReservationModel | null, gone: err?.status === 404 })),
-        ),
-      ),
+          catchError((err) =>
+            of({
+              code,
+              r: null as ReservationModel | null,
+              gone: err?.status === 404,
+            })
+          )
+        )
+      )
     ).subscribe((results) => {
-      const gone = results.filter((x) => x.gone).map((x) => x.code);
-      if (gone.length) this.writeCodes(codes.filter((c) => !gone.includes(c)));
+      const gone = results
+        .filter((x) => x.gone)
+        .map((x) => x.code);
 
-      const loaded = results.map((x) => x.r).filter((r): r is ReservationModel => !!r);
+      if (gone.length) {
+        this.writeCodes(
+          codes.filter((c) => !gone.includes(c))
+        );
+      }
 
-      // Kung naay network error, ayaw ibalhin ang kaadto nang nakita
-      const failed = results.filter((x) => !x.r && !x.gone).map((x) => x.code);
-      const kept = this.mine().filter((r) => failed.includes(r.reference_code));
+      const loaded = results
+        .map((x) => x.r)
+        .filter(
+          (r): r is ReservationModel => !!r
+        );
+
+      // Keep previously loaded reservations if network fails.
+      const failed = results
+        .filter((x) => !x.r && !x.gone)
+        .map((x) => x.code);
+
+      const kept = this.mine().filter((r) =>
+        failed.includes(r.reference_code)
+      );
 
       this.mine.set([...loaded, ...kept]);
       this.loadingMine.set(false);
@@ -127,16 +241,18 @@ export class Reservation implements OnInit, OnDestroy {
     return `${year}-${month}-${day}`;
   }
 
-
   asTime(time: string): Date | null {
     if (!time) return null;
+
     const [h, m] = time.split(':').map(Number);
+
     if (Number.isNaN(h)) return null;
+
     const d = new Date();
     d.setHours(h, m || 0, 0, 0);
+
     return d;
   }
-
 
   statusMessage(status: string): string {
     switch (status) {
@@ -155,9 +271,9 @@ export class Reservation implements OnInit, OnDestroy {
     }
   }
 
-  /* ---------- Actions ---------- */
+  /* ---------- Validation ---------- */
 
-  submit(): void {
+  private validateForm(): boolean {
     const f = this.form;
 
     if (
@@ -167,27 +283,90 @@ export class Reservation implements OnInit, OnDestroy {
       !f.reservation_time ||
       !f.party_size
     ) {
-      this.error.set('Please fill in your name, contact number, date, time and party size.');
-      return;
+      this.error.set(
+        'Please fill in your name, contact number, date, time and party size.'
+      );
+      return false;
     }
 
-    if (f.party_size < 1 || f.party_size > 30 || !Number.isInteger(Number(f.party_size))) {
-      this.error.set('Party size must be between 1 and 30 guests.');
-      return;
+    // Exactly 11 digits, numbers only.
+    if (!/^[0-9]{11}$/.test(f.contact_number)) {
+      this.error.set(
+        'Contact number must contain exactly 11 digits. Letters and special characters are not allowed.'
+      );
+      return false;
+    }
+
+    if (
+      f.party_size < 1 ||
+      f.party_size > 30 ||
+      !Number.isInteger(Number(f.party_size))
+    ) {
+      this.error.set(
+        'Party size must be between 1 and 30 guests.'
+      );
+      return false;
     }
 
     if (f.reservation_date < this.today) {
-      this.error.set('Please select today or a future date.');
+      this.error.set(
+        'Please select today or a future date.'
+      );
+      return false;
+    }
+
+    if (
+      f.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())
+    ) {
+      this.error.set('Please enter a valid email address.');
+      return false;
+    }
+
+    this.error.set('');
+    return true;
+  }
+
+  /* ---------- Confirmation Modal ---------- */
+
+  openConfirmation(): void {
+    if (this.submitting()) {
       return;
     }
 
-    if (f.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim())) {
-      this.error.set('Please enter a valid email address.');
+    if (!this.validateForm()) {
       return;
     }
+
+    this.confirmationOpen.set(true);
+  }
+
+  cancelConfirmation(): void {
+    if (this.submitting()) {
+      return;
+    }
+
+    this.confirmationOpen.set(false);
+  }
+
+  /* ---------- Submit Reservation ---------- */
+
+  submit(): void {
+    if (this.submitting()) {
+      return;
+    }
+
+    // Validate again before sending to the API.
+    if (!this.validateForm()) {
+      this.confirmationOpen.set(false);
+      return;
+    }
+
+    const f = this.form;
 
     this.submitting.set(true);
     this.error.set('');
+    this.confirmationOpen.set(false);
 
     this.api
       .createReservation({
@@ -205,7 +384,7 @@ export class Reservation implements OnInit, OnDestroy {
           this.created.set(reservation);
           this.found.set(null);
 
-          // I-save aron makita gihapon bisan i-refresh o i-close ang browser
+          // Save reference code.
           this.addCode(reservation.reference_code);
           this.loadMine(false);
         },
@@ -214,6 +393,7 @@ export class Reservation implements OnInit, OnDestroy {
           this.submitting.set(false);
 
           const errors = err.error?.errors;
+
           const firstError = errors
             ? (Object.values(errors)[0] as string[] | undefined)?.[0]
             : null;
@@ -221,11 +401,13 @@ export class Reservation implements OnInit, OnDestroy {
           this.error.set(
             firstError ??
               err.error?.message ??
-              'Could not send your reservation. Please try again.',
+              'Could not send your reservation. Please try again.'
           );
         },
       });
   }
+
+  /* ---------- Check Reservation ---------- */
 
   check(): void {
     const referenceCode = this.code.trim().toUpperCase();
@@ -234,7 +416,9 @@ export class Reservation implements OnInit, OnDestroy {
     this.checkError.set('');
 
     if (!referenceCode) {
-      this.checkError.set('Please enter your reservation reference code.');
+      this.checkError.set(
+        'Please enter your reservation reference code.'
+      );
       return;
     }
 
@@ -249,7 +433,7 @@ export class Reservation implements OnInit, OnDestroy {
         this.found.set(reservation);
         this.checking.set(false);
 
-        // Idugang sa "My reservations" para dili na i-type usab
+        // Add to My reservations.
         this.addCode(reservation.reference_code);
         this.loadMine(false);
       },
@@ -258,18 +442,23 @@ export class Reservation implements OnInit, OnDestroy {
         console.error('Reservation lookup failed:', err);
 
         this.checking.set(false);
+
         this.checkError.set(
           err.status === 404
             ? 'No reservation found with that code.'
-            : 'Unable to check your reservation. Please try again.',
+            : 'Unable to check your reservation. Please try again.'
         );
       },
     });
   }
 
+  /* ---------- Reset Form ---------- */
+
   resetForm(): void {
     this.created.set(null);
     this.error.set('');
+    this.confirmationOpen.set(false);
+
     this.form = {
       customer_name: '',
       contact_number: '',

@@ -117,6 +117,9 @@ export class CustomerHome implements OnInit {
   gcashCopied = signal(false);
   gcashQrFailed = signal(false);
 
+  // Confirmation modal sa dili pa i-submit ang reference no.
+  gcashConfirmOpen = signal(false);
+
   visibleProducts = computed(() => {
     const categoryId = this.selectedCategory();
     const inactive = this.inactiveCategoryIds();
@@ -367,7 +370,7 @@ export class CustomerHome implements OnInit {
     }
     if (name.includes('tuna')) return '/assets/menu/tuna.jpg';
     if (name.includes('tapa')) return '/assets/menu/tapa.jpg';
-    return ''; 
+    return '';
   }
 
   getImageUrl(product: Product): string {
@@ -453,29 +456,61 @@ export class CustomerHome implements OnInit {
   }
 
   cancelGCashStep(): void {
+    this.gcashConfirmOpen.set(false);
     this.gcashOrder.set(null);
     this.resetGCashForm();
     this.gcashCopied.set(false);
   }
 
-  submitGCashReference(): void {
-  if (!this.gcashOrder() || this.gcashSubmitting()) return;
-
-  const reference = this.gcashRef.replace(/[\s-]+/g, '');
-
-  if (!/^[A-Za-z0-9]{8,30}$/.test(reference)) {
-    this.gcashError.set(
-      'Enter the Reference No. shown on your GCash receipt.'
-    );
-    return;
+  // Reference no. nga numbers lang (13 digits)
+  cleanGCashRef(): string {
+    return this.gcashRef.replace(/\D/g, '');
   }
 
-  this.gcashSubmitting.set(true);
-  this.gcashError.set('');
+  // Numbers only, max 13 digits (apil na ang paste)
+  onGCashRefInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 13);
 
+    input.value = digits;
+    this.gcashRef = digits;
 
-  this.sendOrder(reference);
-}
+    if (this.gcashError()) {
+      this.gcashError.set('');
+    }
+  }
+
+  // Step 1: i-validate ra ug ablihi ang confirmation modal
+  submitGCashReference(): void {
+    if (!this.gcashOrder() || this.gcashSubmitting()) return;
+
+    const reference = this.cleanGCashRef();
+
+    if (!/^\d{13}$/.test(reference)) {
+      this.gcashError.set(
+        'Enter the 13-digit Reference No. from your GCash receipt (numbers only).'
+      );
+      return;
+    }
+
+    this.gcashError.set('');
+    this.gcashConfirmOpen.set(true);
+  }
+
+  // Step 2: kung "Yes, place order", dinhi na ma-place ang order
+  confirmGCashSubmit(): void {
+    if (this.gcashSubmitting()) return;
+
+    this.gcashConfirmOpen.set(false);
+    this.gcashSubmitting.set(true);
+    this.gcashError.set('');
+
+    this.sendOrder(this.cleanGCashRef());
+  }
+
+  cancelGCashConfirm(): void {
+    this.gcashConfirmOpen.set(false);
+  }
 
   private resetGCashForm(): void {
     this.gcashRef = '';
@@ -552,6 +587,7 @@ export class CustomerHome implements OnInit {
     if (this.paymentMethod === 'gcash') {
       this.resetGCashForm();
       this.gcashCopied.set(false);
+      this.gcashConfirmOpen.set(false);
       this.gcashOrder.set({ total: this.cartTotal() });
       return;
     }
@@ -561,7 +597,7 @@ export class CustomerHome implements OnInit {
   }
 
   private sendOrder(referenceNo: string | null): void {
-    // GI-FIX: Gamiton ang gipili nga paymentMethod ('gcash' o 'cash')
+    // Gamiton ang gipili nga paymentMethod ('gcash' o 'cash')
     const selectedMethod = this.paymentMethod;
 
     const payload = {
@@ -607,6 +643,7 @@ export class CustomerHome implements OnInit {
 
         this.cart.clear();
         this.resetGCashForm();
+        this.gcashConfirmOpen.set(false);
         this.gcashOrder.set(null);
         this.cartOpen.set(false);
         this.goToOrder(savedOrderNumber);
@@ -617,6 +654,7 @@ export class CustomerHome implements OnInit {
 
         this.submitting.set(false);
         this.gcashSubmitting.set(false);
+        this.gcashConfirmOpen.set(false);
 
         const validationErrors = err.error?.errors;
         const firstError = validationErrors

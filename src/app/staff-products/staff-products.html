@@ -22,7 +22,6 @@
         [ngClass]="tab() === 'categories'
           ? 'bg-[#3d2413] text-white shadow-sm'
           : 'text-[#665245] hover:bg-white/60'">
-
         Categories <span class="opacity-70">{{ categories().length }}</span>
       </button>
 
@@ -33,7 +32,6 @@
         [ngClass]="tab() === 'menu'
           ? 'bg-[#3d2413] text-white shadow-sm'
           : 'text-[#665245] hover:bg-white/60'">
-
         Menu <span class="opacity-70">{{ products().length }}</span>
       </button>
     </div>
@@ -135,14 +133,12 @@
                   [ngClass]="c.is_active !== false
                     ? 'text-emerald-800'
                     : 'text-gray-500'">
-
                   {{ c.is_active !== false ? 'Active' : 'Inactive' }}
-
                 </span>
 
               </button>
 
-              <!-- Delete Category: Opens Modal -->
+              <!-- Delete Category -->
               <button
                 type="button"
                 (click)="deleteCategory(c)"
@@ -201,9 +197,7 @@
                   : 'bg-white text-[#665245] border border-[#e3d8c4] hover:bg-[#f2ebd9]',
                 c.is_active !== false ? '' : 'opacity-50 italic'
               ]">
-
               {{ c.name }}
-
             </button>
 
           }
@@ -212,7 +206,7 @@
 
         <button
           type="button"
-          (click)="startAdd()"
+          (click)="requestAddProduct()"
           class="px-5 py-2.5 rounded-full text-xs font-bold bg-[#5c3a21] hover:bg-[#3d2413] text-white transition-all cursor-pointer shadow-xs self-start md:self-auto whitespace-nowrap">
           + Add menu item
         </button>
@@ -329,20 +323,16 @@
                       (click)="fileInput.click()"
                       [disabled]="uploading()"
                       class="px-4 py-2.5 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] disabled:opacity-60 active:scale-95 text-white font-bold text-xs transition-all cursor-pointer shadow-xs">
-
                       {{ uploading() ? 'Uploading…' : form.image ? '📷 Change picture' : '📷 Choose picture' }}
-
                     </button>
 
                     @if (form.image && !uploading()) {
-
                       <button
                         type="button"
                         (click)="removeImage()"
                         class="px-4 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs transition-all cursor-pointer">
                         Remove
                       </button>
-
                     }
 
                   </div>
@@ -406,7 +396,7 @@
 
             <button
               type="button"
-              (click)="formOpen.set(false)"
+              (click)="cancelForm()"
               class="px-5 py-2.5 rounded-xl bg-white hover:bg-[#f2ebd9] text-[#665245] border border-[#e3d8c4] font-bold text-xs transition-all cursor-pointer">
               Cancel
             </button>
@@ -479,9 +469,7 @@
                   [ngClass]="p.is_available
                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                     : 'bg-red-100 text-red-800 border border-red-200'">
-
                   {{ p.is_available ? 'Available' : 'Sold out' }}
-
                 </span>
 
               </div>
@@ -502,11 +490,9 @@
                   </span>
 
                   @if (p.category && p.category.is_active === false) {
-
                     <span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 text-[10px] font-bold uppercase">
                       Category inactive
                     </span>
-
                   }
 
                 </div>
@@ -574,9 +560,7 @@
                     [ngClass]="p.is_available
                       ? 'bg-[#5c3a21] hover:bg-[#3d2413] text-white'
                       : 'bg-emerald-700 hover:bg-emerald-800 text-white'">
-
                     {{ p.is_available ? 'Mark sold out' : 'Mark available' }}
-
                   </button>
 
                   <button
@@ -611,6 +595,276 @@
   </div>
 </div>
 
+<!-- ===================== ADD CATEGORY MODAL ===================== -->
+@if (addCategoryModal()) {
+
+  <div
+    class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    (click)="cancelAddCategory()">
+
+    <div
+      class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+      (click)="$event.stopPropagation()">
+
+      <div class="px-6 pt-6 pb-4 flex items-start gap-4">
+
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
+          <span class="text-2xl">📁</span>
+        </div>
+
+        <div class="flex-1">
+          <h3 class="text-lg font-black text-[#3d2413]">
+            Add New Category?
+          </h3>
+          <p class="text-xs text-[#8c6d53] mt-1">
+            Please confirm adding this category.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="cancelAddCategory()"
+          class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400">
+          ✕
+        </button>
+
+      </div>
+
+      <div class="px-6 pb-5">
+        <div class="rounded-2xl border border-[#e8dfce] bg-[#f8f6f0] p-4">
+          <p class="text-[10px] uppercase tracking-wider font-bold text-[#8c6d53] mb-1">
+            Category name
+          </p>
+          <p class="text-base font-black text-[#3d2413]">
+            {{ newCategory }}
+          </p>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-[#faf9f6] border-t border-[#eee7dc] flex flex-col-reverse sm:flex-row justify-end gap-2">
+
+        <button
+          type="button"
+          (click)="cancelAddCategory()"
+          class="px-5 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-[#665245] font-bold text-xs">
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmAddCategory()"
+          class="px-5 py-2.5 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] text-white font-bold text-xs">
+          Yes, Add Category
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ===================== ADD MENU ITEM MODAL ===================== -->
+@if (addProductModal()) {
+
+  <div
+    class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    (click)="cancelAddProduct()">
+
+    <div
+      class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+      (click)="$event.stopPropagation()">
+
+      <div class="px-6 pt-6 pb-4 flex items-start gap-4">
+
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
+          <span class="text-2xl">☕</span>
+        </div>
+
+        <div class="flex-1">
+          <h3 class="text-lg font-black text-[#3d2413]">
+            Add Menu Item?
+          </h3>
+          <p class="text-xs text-[#8c6d53] mt-1">
+            Do you want to open the new menu item form?
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="cancelAddProduct()"
+          class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400">
+          ✕
+        </button>
+
+      </div>
+
+      <div class="px-6 pb-5">
+        <p class="text-sm text-[#665245]">
+          You can enter the item name, category, prices, picture and description in the next form.
+        </p>
+      </div>
+
+      <div class="px-6 py-4 bg-[#faf9f6] border-t border-[#eee7dc] flex flex-col-reverse sm:flex-row justify-end gap-2">
+
+        <button
+          type="button"
+          (click)="cancelAddProduct()"
+          class="px-5 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-[#665245] font-bold text-xs">
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmAddProduct()"
+          class="px-5 py-2.5 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] text-white font-bold text-xs">
+          Yes, Continue
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ===================== SAVE MENU ITEM MODAL ===================== -->
+@if (saveProductModal()) {
+
+  <div
+    class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    (click)="cancelSaveProduct()">
+
+    <div
+      class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+      (click)="$event.stopPropagation()">
+
+      <div class="px-6 pt-6 pb-4 flex items-start gap-4">
+
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0">
+          <span class="text-2xl">✓</span>
+        </div>
+
+        <div class="flex-1">
+          <h3 class="text-lg font-black text-[#3d2413]">
+            {{ editingId() ? 'Save Changes?' : 'Save Menu Item?' }}
+          </h3>
+          <p class="text-xs text-[#8c6d53] mt-1">
+            Please confirm before saving this menu item.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="cancelSaveProduct()"
+          class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400">
+          ✕
+        </button>
+
+      </div>
+
+      <div class="px-6 pb-5">
+        <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
+          <p class="text-[10px] uppercase tracking-wider font-bold text-emerald-700 mb-1">
+            Menu item
+          </p>
+          <p class="text-base font-black text-[#3d2413]">
+            {{ form.name }}
+          </p>
+          <p class="text-xs text-[#665245] mt-2">
+            Are you sure you want to {{ editingId() ? 'update' : 'save' }} this menu item?
+          </p>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-[#faf9f6] border-t border-[#eee7dc] flex flex-col-reverse sm:flex-row justify-end gap-2">
+
+        <button
+          type="button"
+          (click)="cancelSaveProduct()"
+          class="px-5 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-[#665245] font-bold text-xs">
+          Go Back
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmSaveProduct()"
+          class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs">
+          Yes, Save
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- ===================== CANCEL FORM MODAL ===================== -->
+@if (cancelFormModal()) {
+
+  <div
+    class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    (click)="keepEditing()">
+
+    <div
+      class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+      (click)="$event.stopPropagation()">
+
+      <div class="px-6 pt-6 pb-4 flex items-start gap-4">
+
+        <div class="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center shrink-0">
+          <span class="text-2xl">⚠️</span>
+        </div>
+
+        <div class="flex-1">
+          <h3 class="text-lg font-black text-[#3d2413]">
+            Discard Changes?
+          </h3>
+          <p class="text-xs text-[#8c6d53] mt-1">
+            Are you sure you want to cancel?
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="keepEditing()"
+          class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400">
+          ✕
+        </button>
+
+      </div>
+
+      <div class="px-6 pb-5">
+        <div class="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+          <p class="text-sm font-bold text-[#3d2413]">
+            Your changes will not be saved.
+          </p>
+          <p class="text-xs text-[#8c6d53] mt-2 leading-relaxed">
+            If you continue, all the information you entered in this form will be discarded.
+          </p>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-[#faf9f6] border-t border-[#eee7dc] flex flex-col-reverse sm:flex-row justify-end gap-2">
+
+        <button
+          type="button"
+          (click)="keepEditing()"
+          class="px-5 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-[#665245] font-bold text-xs">
+          Keep Editing
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmCancelForm()"
+          class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs">
+          Yes, Discard
+        </button>
+
+      </div>
+
+    </div>
+  </div>
+}
+
 <!-- ===================== CATEGORY DELETE MODAL ===================== -->
 @if (deletingCategory(); as category) {
 
@@ -619,41 +873,22 @@
     (click)="cancelDeleteCategory()">
 
     <div
-      class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-[fadeIn_0.2s_ease-out]"
+      class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
       (click)="$event.stopPropagation()">
 
-      <!-- Modal Header -->
       <div class="px-6 pt-6 pb-4 flex items-start gap-4">
 
         <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
-
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-6 h-6 text-red-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="1.8">
-
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 9v4m0 4h.01M10.3 3.8h3.4l8 14a1.5 1.5 0 0 1-1.3 2.2H3.6a1.5 1.5 0 0 1-1.3-2.2l8-14a1.5 1.5 0 0 1 0 0Z" />
-
-          </svg>
-
+          <span class="text-2xl text-red-600">⚠️</span>
         </div>
 
         <div class="flex-1">
-
           <h3 class="text-lg font-black text-[#3d2413]">
             Delete Category?
           </h3>
-
           <p class="text-xs text-[#8c6d53] mt-1 leading-relaxed">
             Are you sure you want to delete this category?
           </p>
-
         </div>
 
         <button
@@ -665,29 +900,21 @@
 
       </div>
 
-      <!-- Modal Body -->
       <div class="px-6 pb-5">
-
         <div class="rounded-2xl border border-red-100 bg-red-50/70 p-4">
-
           <p class="text-[10px] uppercase tracking-wider font-bold text-red-500 mb-1">
             Category to be deleted
           </p>
-
           <p class="text-base font-black text-[#3d2413]">
             {{ category.name }}
           </p>
-
           <p class="text-xs text-red-700 mt-2 leading-relaxed">
             This action may also delete all menu items under this category.
             This cannot be undone.
           </p>
-
         </div>
-
       </div>
 
-      <!-- Modal Footer -->
       <div class="px-6 py-4 bg-[#faf9f6] border-t border-[#eee7dc] flex flex-col-reverse sm:flex-row justify-end gap-2">
 
         <button
@@ -707,7 +934,77 @@
       </div>
 
     </div>
-
   </div>
+}
 
+<!-- ===================== PRODUCT DELETE MODAL ===================== -->
+@if (deletingProduct(); as product) {
+
+  <div
+    class="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+    (click)="cancelDeleteProduct()">
+
+    <div
+      class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+      (click)="$event.stopPropagation()">
+
+      <div class="px-6 pt-6 pb-4 flex items-start gap-4">
+
+        <div class="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+          <span class="text-2xl text-red-600">⚠️</span>
+        </div>
+
+        <div class="flex-1">
+          <h3 class="text-lg font-black text-[#3d2413]">
+            Delete Menu Item?
+          </h3>
+          <p class="text-xs text-[#8c6d53] mt-1 leading-relaxed">
+            Are you sure you want to delete this menu item?
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="cancelDeleteProduct()"
+          class="w-8 h-8 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors flex items-center justify-center">
+          ✕
+        </button>
+
+      </div>
+
+      <div class="px-6 pb-5">
+        <div class="rounded-2xl border border-red-100 bg-red-50/70 p-4">
+          <p class="text-[10px] uppercase tracking-wider font-bold text-red-500 mb-1">
+            Menu item to be deleted
+          </p>
+          <p class="text-base font-black text-[#3d2413]">
+            {{ product.name }}
+          </p>
+          <p class="text-xs text-red-700 mt-2 leading-relaxed">
+            Are you sure you want to permanently delete this menu item?
+            This action cannot be undone.
+          </p>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-[#faf9f6] border-t border-[#eee7dc] flex flex-col-reverse sm:flex-row justify-end gap-2">
+
+        <button
+          type="button"
+          (click)="cancelDeleteProduct()"
+          class="px-5 py-2.5 rounded-xl border border-[#e3d8c4] bg-white hover:bg-[#f2ebd9] text-[#665245] font-bold text-xs transition-all cursor-pointer">
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          (click)="confirmDeleteProduct()"
+          class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs transition-all cursor-pointer shadow-sm">
+          Yes, Delete
+        </button>
+
+      </div>
+
+    </div>
+  </div>
 }

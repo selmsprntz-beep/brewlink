@@ -83,20 +83,20 @@ export class MyOrders implements OnInit, OnDestroy {
     return String(status).toLowerCase() === 'completed';
   }
 
-  private sortOrders(list: Order[]): Order[] {
-    return [...list].sort((a, b) => {
-      const aCancelled = String(a.status).toLowerCase() === 'cancelled';
-      const bCancelled = String(b.status).toLowerCase() === 'cancelled';
+private sortOrders(list: Order[]): Order[] {
+  return [...list].sort((a, b) => {
+    const aCancelled = String(a.status).toLowerCase() === 'cancelled';
+    const bCancelled = String(b.status).toLowerCase() === 'cancelled';
 
-      // Active orders first, cancelled ones last.
-      if (aCancelled !== bCancelled) {
-        return Number(aCancelled) - Number(bCancelled);
-      }
+    // Active orders first, cancelled orders last.
+    if (aCancelled !== bCancelled) {
+      return Number(aCancelled) - Number(bCancelled);
+    }
 
-   
-      return Number(b.id) - Number(a.id);
-    });
-  }
+    // Oldest order first, newest order last.
+    return Number(a.id) - Number(b.id);
+  });
+}
 
   private load(): void {
     if (this.loadingRequest) {

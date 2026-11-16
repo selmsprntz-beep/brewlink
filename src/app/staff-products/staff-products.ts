@@ -28,6 +28,21 @@ export class StaffProducts implements OnInit {
   // Category deletion confirmation modal
   deletingCategory = signal<CategoryRow | null>(null);
 
+  // Product deletion confirmation modal
+  deletingProduct = signal<Product | null>(null);
+
+  // Add category confirmation modal
+  addCategoryModal = signal(false);
+
+  // Add menu item confirmation modal
+  addProductModal = signal(false);
+
+  // Save menu item confirmation modal
+  saveProductModal = signal(false);
+
+  // Cancel form confirmation modal
+  cancelFormModal = signal(false);
+
   // Active tab
   tab = signal<'categories' | 'menu'>('categories');
 
@@ -153,24 +168,49 @@ export class StaffProducts implements OnInit {
     );
   }
 
+  // Open add category confirmation
   addCategory() {
     const name = this.newCategory.trim();
 
-    if (!name) return;
+    if (!name) {
+      this.error.set('Please enter a category name.');
+      return;
+    }
+
+    this.error.set('');
+    this.addCategoryModal.set(true);
+  }
+
+  // Confirm adding category
+  confirmAddCategory() {
+    const name = this.newCategory.trim();
+
+    if (!name) {
+      this.addCategoryModal.set(false);
+      this.error.set('Please enter a category name.');
+      return;
+    }
 
     this.productService
       .saveCategory({ name, is_active: true } as Partial<Category>)
       .subscribe({
         next: () => {
           this.newCategory = '';
+          this.addCategoryModal.set(false);
           this.error.set('');
           this.load();
         },
-        error: (err) =>
+        error: (err) => {
+          this.addCategoryModal.set(false);
           this.error.set(
             err.error?.errors?.name?.[0] ?? 'Could not add the category.'
-          ),
+          );
+        },
       });
+  }
+
+  cancelAddCategory() {
+    this.addCategoryModal.set(false);
   }
 
   toggleCategory(c: CategoryRow) {
@@ -216,7 +256,6 @@ export class StaffProducts implements OnInit {
     });
   }
 
-  // Close modal without deleting
   cancelDeleteCategory() {
     this.deletingCategory.set(null);
   }
@@ -228,8 +267,23 @@ export class StaffProducts implements OnInit {
     this.form = this.emptyForm();
     this.editingId.set(null);
     this.formOpen.set(true);
+    this.error.set('');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Confirm before opening a new menu item form
+  requestAddProduct() {
+    this.addProductModal.set(true);
+  }
+
+  confirmAddProduct() {
+    this.addProductModal.set(false);
+    this.startAdd();
+  }
+
+  cancelAddProduct() {
+    this.addProductModal.set(false);
   }
 
   startEdit(p: Product) {
@@ -247,8 +301,27 @@ export class StaffProducts implements OnInit {
 
     this.editingId.set(p.id);
     this.formOpen.set(true);
+    this.error.set('');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  /* ---------- Cancel Form ---------- */
+
+  cancelForm() {
+    this.cancelFormModal.set(true);
+  }
+
+  keepEditing() {
+    this.cancelFormModal.set(false);
+  }
+
+  confirmCancelForm() {
+    this.cancelFormModal.set(false);
+    this.formOpen.set(false);
+    this.editingId.set(null);
+    this.form = this.emptyForm();
+    this.error.set('');
   }
 
   /* ---------- Upload picture ---------- */
@@ -318,6 +391,18 @@ export class StaffProducts implements OnInit {
       return;
     }
 
+    this.error.set('');
+    this.saveProductModal.set(true);
+  }
+
+  // Execute save only after confirmation
+  confirmSaveProduct() {
+    if (this.uploading()) {
+      this.saveProductModal.set(false);
+      this.error.set('Please wait for the picture to finish uploading.');
+      return;
+    }
+
     const grande =
       this.form.grande_price === null ||
       (this.form.grande_price as unknown) === ''
@@ -338,15 +423,24 @@ export class StaffProducts implements OnInit {
       .saveProduct(payload, this.editingId() ?? undefined)
       .subscribe({
         next: () => {
+          this.saveProductModal.set(false);
           this.error.set('');
           this.formOpen.set(false);
+          this.editingId.set(null);
+          this.form = this.emptyForm();
           this.load();
         },
-        error: (err) =>
+        error: (err) => {
+          this.saveProductModal.set(false);
           this.error.set(
             err.error?.message ?? 'Could not save the menu item.'
-          ),
+          );
+        },
       });
+  }
+
+  cancelSaveProduct() {
+    this.saveProductModal.set(false);
   }
 
   /* ---------- Product Actions ---------- */
@@ -360,12 +454,31 @@ export class StaffProducts implements OnInit {
       });
   }
 
+  // Open product delete confirmation modal
   remove(p: Product) {
-    if (!confirm(`Delete "${p.name}"?`)) return;
+    this.deletingProduct.set(p);
+  }
 
-    this.productService.deleteProduct(p.id).subscribe({
-      next: () => this.load(),
-      error: () => this.error.set('Could not delete the menu item.'),
+  // Execute deletion only after confirmation
+  confirmDeleteProduct() {
+    const product = this.deletingProduct();
+
+    if (!product) return;
+
+    this.productService.deleteProduct(product.id).subscribe({
+      next: () => {
+        this.deletingProduct.set(null);
+        this.error.set('');
+        this.load();
+      },
+      error: () => {
+        this.deletingProduct.set(null);
+        this.error.set('Could not delete the menu item.');
+      },
     });
+  }
+
+  cancelDeleteProduct() {
+    this.deletingProduct.set(null);
   }
 }

@@ -1,3 +1,4 @@
+
 <div class="min-h-screen bg-[#f8f6f0] text-[#2c221e] font-sans">
 
   <!-- Top bar -->
@@ -12,6 +13,7 @@
           class="px-3 sm:px-4 py-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-all">
           Menu
         </a>
+
         <a routerLink="/reservation"
           class="px-3 sm:px-4 py-2 rounded-full bg-[#d4a373] text-[#1c140e] transition-all">
           Reserve a table
@@ -36,27 +38,36 @@
       <!-- Success -->
       <div class="bg-white rounded-3xl p-6 sm:p-8 border border-[#e8dfce] shadow-sm text-center">
         <div class="w-14 h-14 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl mb-3">✓</div>
+
         <h2 class="text-xl font-black text-[#3d2413]">Reservation received</h2>
         <p class="text-xs text-[#8c6d53] mt-1">Your reference code is</p>
 
         <div class="my-4 inline-block bg-[#f8f6f0] border-2 border-dashed border-[#d4a373] rounded-2xl px-6 py-3">
-          <span class="text-2xl sm:text-3xl font-black tracking-wider text-[#3d2413] break-all">{{ created()!.reference_code }}</span>
+          <span class="text-2xl sm:text-3xl font-black tracking-wider text-[#3d2413] break-all">
+            {{ created()!.reference_code }}
+          </span>
         </div>
 
         <div class="grid grid-cols-3 gap-2 text-center mb-4">
           <div class="bg-[#f8f6f0] rounded-2xl p-3">
             <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Date</div>
-            <div class="text-xs font-black text-[#3d2413] mt-0.5">{{ created()!.reservation_date | date: 'MMM d, y' }}</div>
+            <div class="text-xs font-black text-[#3d2413] mt-0.5">
+              {{ created()!.reservation_date | date: 'MMM d, y' }}
+            </div>
           </div>
+
           <div class="bg-[#f8f6f0] rounded-2xl p-3">
             <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Time</div>
             <div class="text-xs font-black text-[#3d2413] mt-0.5">
               {{ asTime(created()!.reservation_time) ? (asTime(created()!.reservation_time) | date: 'h:mm a') : created()!.reservation_time }}
             </div>
           </div>
+
           <div class="bg-[#f8f6f0] rounded-2xl p-3">
             <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Guests</div>
-            <div class="text-xs font-black text-[#3d2413] mt-0.5">{{ created()!.party_size }}</div>
+            <div class="text-xs font-black text-[#3d2413] mt-0.5">
+              {{ created()!.party_size }}
+            </div>
           </div>
         </div>
 
@@ -92,70 +103,122 @@
         }
 
         <div class="space-y-4">
+
           <div>
-            <label for="name" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Your name</label>
-            <input id="name" name="customer_name" [(ngModel)]="form.customer_name" maxlength="100" required
-              class="w-full px-4 py-3 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+            <label for="name" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+              Your name
+            </label>
+            <input id="name" name="customer_name"
+              [(ngModel)]="form.customer_name"
+              maxlength="100" required
+              class="w-full px-4 py-3 rounded-xl border border-[#e3d8ce] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+          </div>
+
+          <!-- Contact number: digits only, exactly 11 -->
+          <div>
+            <label for="contact" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+              Contact number
+            </label>
+
+<input
+  id="contact"
+  name="contact_number"
+  type="text"
+  inputmode="numeric"
+  pattern="[0-9]{11}"
+  [(ngModel)]="form.contact_number"
+  (keydown)="onContactKeydown($event)"
+  (paste)="onContactPaste($event)"
+  (ngModelChange)="onContactNumberChange($event)"
+  maxlength="11"
+  minlength="11"
+  placeholder="09xxxxxxxxx"
+  autocomplete="tel"
+  required
+  class="w-full px-4 py-3 rounded-xl border border-[#e3d8ce] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]"
+/>
+
+            <p class="text-[10px] text-[#8c6d53] mt-1">
+              Enter exactly 11 digits (e.g. 09xxxxxxxxx).
+            </p>
           </div>
 
           <div>
-            <label for="contact" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Contact number</label>
-            <input id="contact" name="contact_number" type="tel" [(ngModel)]="form.contact_number" maxlength="30"
-              placeholder="09xx xxx xxxx" required
-              class="w-full px-4 py-3 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
-          </div>
-
-          <div>
-            <label for="email" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Email (optional)</label>
-            <input id="email" name="email" type="email" [(ngModel)]="form.email" maxlength="255"
+            <label for="email" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+              Email (optional)
+            </label>
+            <input id="email" name="email" type="email"
+              [(ngModel)]="form.email" maxlength="255"
               placeholder="you@example.com"
-              class="w-full px-4 py-3 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+              class="w-full px-4 py-3 rounded-xl border border-[#e3d8ce] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label for="date" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Date</label>
-              <input id="date" name="reservation_date" type="date" [min]="today" [(ngModel)]="form.reservation_date" required
-                class="w-full px-3 py-3 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+              <label for="date" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+                Date
+              </label>
+              <input id="date" name="reservation_date" type="date"
+                [min]="today" [(ngModel)]="form.reservation_date" required
+                class="w-full px-3 py-3 rounded-xl border border-[#e3d8ce] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
             </div>
+
             <div>
-              <label for="time" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Time</label>
-              <input id="time" name="reservation_time" type="time" [(ngModel)]="form.reservation_time" required
-                class="w-full px-3 py-3 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+              <label for="time" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+                Time
+              </label>
+              <input id="time" name="reservation_time" type="time"
+                [(ngModel)]="form.reservation_time" required
+                class="w-full px-3 py-3 rounded-xl border border-[#e3d8ce] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
             </div>
+
             <div>
-              <label for="party" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Party size</label>
-              <input id="party" name="party_size" type="number" min="1" max="30" [(ngModel)]="form.party_size" required
-                class="w-full px-3 py-3 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+              <label for="party" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+                Party size
+              </label>
+              <input id="party" name="party_size" type="number"
+                min="1" max="30" [(ngModel)]="form.party_size" required
+                class="w-full px-3 py-3 rounded-xl border border-[#e3d8ce] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
             </div>
           </div>
 
           <div>
-            <label for="notes" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Notes (optional)</label>
-            <textarea id="notes" name="notes" rows="2" [(ngModel)]="form.notes"
+            <label for="notes" class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+              Notes (optional)
+            </label>
+            <textarea id="notes" name="notes" rows="2"
+              [(ngModel)]="form.notes"
               placeholder="Birthday, high chair, etc."
-              class="w-full px-4 py-3 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]"></textarea>
+              class="w-full px-4 py-3 rounded-xl border border-[#e3d8ce] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]"></textarea>
           </div>
         </div>
 
-        <button type="button" [disabled]="submitting()" (click)="submit()"
+        <!-- Opens confirmation modal -->
+        <button type="button"
+          [disabled]="submitting()"
+          (click)="openConfirmation()"
           class="mt-6 w-full py-3.5 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm transition-all cursor-pointer shadow-md">
-          {{ submitting() ? 'Sending…' : 'Send reservation request' }}
+          Send reservation request
         </button>
       </div>
     }
 
-    <!-- My reservations (naka-save sa browser) -->
+    <!-- My reservations (saved in browser) -->
     @if (mine().length > 0 || loadingMine()) {
       <div class="bg-white rounded-3xl p-5 sm:p-8 border border-[#e8dfce] shadow-sm">
+
         <div class="flex items-center justify-between mb-1">
           <h3 class="font-black text-[#3d2413] text-lg">My reservations</h3>
+
           <button type="button" (click)="loadMine()"
             class="text-[11px] font-bold text-[#5c3a21] hover:text-[#3d2413] cursor-pointer">
             ↻ Refresh
           </button>
         </div>
-        <p class="text-xs text-[#8c6d53] mb-4">Status updates automatically. Keep this page open to see changes.</p>
+
+        <p class="text-xs text-[#8c6d53] mb-4">
+          Status updates automatically. Keep this page open to see changes.
+        </p>
 
         @if (loadingMine() && mine().length === 0) {
           <p class="text-xs text-[#5c3a21] animate-pulse font-semibold">Loading…</p>
@@ -174,8 +237,12 @@
 
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <div class="text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">Reference</div>
-                  <div class="font-black text-[#3d2413] break-all">{{ r.reference_code }}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">
+                    Reference
+                  </div>
+                  <div class="font-black text-[#3d2413] break-all">
+                    {{ r.reference_code }}
+                  </div>
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
@@ -189,27 +256,40 @@
                     }">
                     {{ r.status }}
                   </span>
-                  <button type="button" (click)="removeMine(r.reference_code)" title="Remove from my list"
-                    class="w-6 h-6 rounded-full bg-white/70 hover:bg-white text-[#8c6d53] text-xs cursor-pointer">✕</button>
+
+                  <button type="button"
+                    (click)="removeMine(r.reference_code)"
+                    title="Remove from my list"
+                    class="w-6 h-6 rounded-full bg-white/70 hover:bg-white text-[#8c6d53] text-xs cursor-pointer">
+                    ✕
+                  </button>
                 </div>
               </div>
 
-              <p class="text-xs font-semibold text-[#3d2413] mt-2">{{ statusMessage(r.status) }}</p>
+              <p class="text-xs font-semibold text-[#3d2413] mt-2">
+                {{ statusMessage(r.status) }}
+              </p>
 
               <div class="grid grid-cols-3 gap-2 text-center mt-3">
                 <div class="bg-white/80 rounded-xl p-2">
                   <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Date</div>
-                  <div class="text-xs font-black text-[#3d2413] mt-0.5">{{ r.reservation_date | date: 'MMM d' }}</div>
+                  <div class="text-xs font-black text-[#3d2413] mt-0.5">
+                    {{ r.reservation_date | date: 'MMM d' }}
+                  </div>
                 </div>
+
                 <div class="bg-white/80 rounded-xl p-2">
                   <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Time</div>
                   <div class="text-xs font-black text-[#3d2413] mt-0.5">
                     {{ asTime(r.reservation_time) ? (asTime(r.reservation_time) | date: 'h:mm a') : r.reservation_time }}
                   </div>
                 </div>
+
                 <div class="bg-white/80 rounded-xl p-2">
                   <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Guests</div>
-                  <div class="text-xs font-black text-[#3d2413] mt-0.5">{{ r.party_size }}</div>
+                  <div class="text-xs font-black text-[#3d2413] mt-0.5">
+                    {{ r.party_size }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -219,4 +299,112 @@
     }
 
   </main>
+
+  <!-- Reservation Confirmation Modal -->
+  @if (confirmationOpen()) {
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6"
+      (click)="cancelConfirmation()">
+
+      <div
+        class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 sm:p-8"
+        (click)="$event.stopPropagation()">
+
+        <div class="w-14 h-14 mx-auto rounded-full bg-[#f8f0e5] flex items-center justify-center text-3xl mb-4">
+          🪑
+        </div>
+
+        <h2 class="text-xl font-black text-[#3d2413] text-center">
+          Confirm Reservation
+        </h2>
+
+        <p class="text-sm text-[#8c6d53] text-center mt-2">
+          Please review your reservation details before sending your request.
+        </p>
+
+        <div class="mt-5 rounded-2xl bg-[#f8f6f0] border border-[#e8dfce] p-4 space-y-3">
+
+          <div class="flex justify-between gap-3 text-sm">
+            <span class="text-[#8c6d53]">Name</span>
+            <span class="font-bold text-[#3d2413] text-right break-words">
+              {{ form.customer_name }}
+            </span>
+          </div>
+
+          <div class="flex justify-between gap-3 text-sm">
+            <span class="text-[#8c6d53]">Contact</span>
+            <span class="font-bold text-[#3d2413]">
+              {{ form.contact_number }}
+            </span>
+          </div>
+
+          <div class="flex justify-between gap-3 text-sm">
+            <span class="text-[#8c6d53]">Date</span>
+            <span class="font-bold text-[#3d2413]">
+              {{ form.reservation_date | date: 'MMM d, y' }}
+            </span>
+          </div>
+
+          <div class="flex justify-between gap-3 text-sm">
+            <span class="text-[#8c6d53]">Time</span>
+            <span class="font-bold text-[#3d2413]">
+              {{ asTime(form.reservation_time) ? (asTime(form.reservation_time) | date: 'h:mm a') : form.reservation_time }}
+            </span>
+          </div>
+
+          <div class="flex justify-between gap-3 text-sm">
+            <span class="text-[#8c6d53]">Party size</span>
+            <span class="font-bold text-[#3d2413]">
+              {{ form.party_size }} guests
+            </span>
+          </div>
+
+          @if (form.email.trim()) {
+            <div class="flex justify-between gap-3 text-sm">
+              <span class="text-[#8c6d53]">Email</span>
+              <span class="font-bold text-[#3d2413] text-right break-all">
+                {{ form.email }}
+              </span>
+            </div>
+          }
+
+          @if (form.notes.trim()) {
+            <div class="border-t border-[#e3d8ce] pt-3">
+              <div class="text-xs text-[#8c6d53] mb-1">Notes</div>
+              <p class="text-sm font-semibold text-[#3d2413] break-words">
+                {{ form.notes }}
+              </p>
+            </div>
+          }
+
+        </div>
+
+        <p class="text-xs text-center text-[#8c6d53] mt-4">
+          Are you sure you want to send this reservation request?
+        </p>
+
+        <div class="grid grid-cols-2 gap-3 mt-5">
+
+          <button
+            type="button"
+            (click)="cancelConfirmation()"
+            [disabled]="submitting()"
+            class="py-3 rounded-xl border border-[#e3d8ce] text-[#5c3a21] hover:bg-[#f8f6f0] font-bold text-sm transition-all disabled:opacity-50">
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            (click)="submit()"
+            [disabled]="submitting()"
+            class="py-3 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] text-white font-bold text-sm transition-all disabled:opacity-60">
+            {{ submitting() ? 'Sending...' : 'Confirm & Send' }}
+          </button>
+
+        </div>
+
+      </div>
+    </div>
+  }
+
 </div>

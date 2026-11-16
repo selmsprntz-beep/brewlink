@@ -1,533 +1,518 @@
-<div class="min-h-screen bg-[#f5f2ec] px-4 py-6 text-[#26211c] sm:px-6 lg:px-10 lg:py-8">
-  <div class="mx-auto max-w-7xl">
 
-    <!-- PAGE HEADER -->
+<div class="min-h-screen bg-[#f5f2ec] px-4 py-6 text-[#26211c] sm:px-6 lg:px-10 lg:py-8">
+  <div class="mx-auto max-w-[1600px]">
+
+    <!-- HEADER -->
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
       <div>
-        <h1 class="text-2xl font-semibold tracking-tight text-[#2a1c13]">Orders</h1>
+        <h1 class="text-2xl font-semibold text-[#2a1c13]">Orders</h1>
         <p class="mt-1 text-sm text-[#6f675e]">
           Manage customer orders and verify payments.
         </p>
       </div>
 
       <div class="flex items-center gap-3">
-        <div class="hidden rounded-xl border border-[#e4dfd6] bg-white px-4 py-2 text-right sm:block">
-          <p class="text-[10px] font-medium uppercase tracking-wider text-[#8a8176]">In queue</p>
-          <p class="text-lg font-semibold leading-tight tabular-nums text-[#2a1c13]">{{ activeOrderCount }}</p>
+        <div class="rounded-xl border border-[#e4dfd6] bg-white px-4 py-2 text-right">
+          <p class="text-[10px] font-medium uppercase tracking-wider text-[#8a8176]">
+            In queue
+          </p>
+          <p class="text-lg font-semibold">{{ activeOrderCount }}</p>
         </div>
 
         <button
           type="button"
           (click)="refreshOrders()"
-          class="inline-flex h-11 items-center gap-2 rounded-xl border border-[#d9d3c8] bg-white px-4 text-sm font-medium text-[#2a1c13] transition-colors hover:bg-[#efe9df] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a3022]">
-          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M16.5 10a6.5 6.5 0 1 1-2-4.7" /><path d="M16.5 3.5v3.3h-3.3" />
-          </svg>
-          Refresh
+          class="h-11 rounded-xl border border-[#d9d3c8] bg-white px-4 text-sm font-medium hover:bg-[#efe9df]">
+          ↻ Refresh
         </button>
       </div>
     </div>
 
-    <!-- SUCCESS MESSAGE -->
+    <!-- SUCCESS -->
     @if (successMessage) {
-      <div role="status" class="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#cfe3d6] bg-[#f1f8f3] px-4 py-3 text-sm text-[#1f5c38]">
-        <span>{{ successMessage }}</span>
-        <button type="button" (click)="clearMessages()" aria-label="Dismiss"
-          class="rounded px-1.5 text-[#1f5c38] hover:bg-[#e1f0e6]">✕</button>
+      <div class="mb-4 flex justify-between rounded-xl border border-[#cfe3d6] bg-[#f1f8f3] px-4 py-3 text-sm text-[#1f5c38]">
+        {{ successMessage }}
+        <button type="button" (click)="clearMessages()">✕</button>
       </div>
     }
 
-    <!-- ERROR MESSAGE -->
+    <!-- ERROR -->
     @if (errorMessage) {
-      <div role="alert" class="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#ecd0cb] bg-[#fdf4f2] px-4 py-3 text-sm text-[#8a2a1d]">
-        <span>{{ errorMessage }}</span>
-        <button type="button" (click)="clearMessages()" aria-label="Dismiss"
-          class="rounded px-1.5 text-[#8a2a1d] hover:bg-[#f8e4e0]">✕</button>
+      <div class="mb-4 flex justify-between rounded-xl border border-[#ecd0cb] bg-[#fdf4f2] px-4 py-3 text-sm text-[#8a2a1d]">
+        {{ errorMessage }}
+        <button type="button" (click)="clearMessages()">✕</button>
       </div>
     }
 
-    <!-- SEARCH + FILTER -->
+    <!-- SEARCH AND FILTER -->
     <div class="mb-6 rounded-2xl border border-[#e4dfd6] bg-white p-3 sm:p-4">
       <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div class="relative lg:w-96">
-          <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a8176]" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-            <circle cx="9" cy="9" r="5.5" /><path d="m13.5 13.5 3.5 3.5" />
-          </svg>
-          <input
-            type="text"
-            [(ngModel)]="searchTerm"
-            aria-label="Search orders"
-            placeholder="Search order, customer, table or item"
-            class="h-10 w-full rounded-lg border border-[#e4dfd6] bg-[#faf8f4] pl-10 pr-4 text-sm text-[#26211c] placeholder:text-[#8a8176] focus:border-[#4a3022] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4a3022]/10"
-          />
-        </div>
 
-        <div class="-mx-1 flex flex-1 gap-2 overflow-x-auto px-1 py-0.5" role="tablist" aria-label="Filter orders by status">
+        <input
+          type="text"
+          [(ngModel)]="searchTerm"
+          placeholder="Search order, customer, table or item"
+          class="h-11 w-full rounded-lg border border-[#e4dfd6] bg-[#faf8f4] px-4 text-sm outline-none focus:border-[#4a3022] lg:w-96">
+
+        <div class="flex flex-1 gap-2 overflow-x-auto pb-1">
           @for (f of ['all', 'active', 'pending', 'preparing', 'ready', 'completed', 'cancelled']; track f) {
             <button
               type="button"
-              role="tab"
-              [attr.aria-selected]="selectedFilter === f"
               (click)="selectedFilter = f; refreshOrders()"
-              class="h-9 shrink-0 rounded-full border px-4 font-sans text-sm font-bold capitalize transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a3022]"
+              class="h-10 shrink-0 rounded-full border px-4 text-sm font-bold capitalize"
               [ngClass]="selectedFilter === f
                 ? 'border-[#2a1c13] bg-[#2a1c13] text-white'
-                : 'border-[#e4dfd6] bg-white text-[#3d2a1d] hover:border-[#d4c9b8] hover:bg-[#f5f0e6]'">
+                : 'border-[#e4dfd6] bg-white text-[#3d2a1d] hover:bg-[#f5f0e6]'">
               {{ f }}
             </button>
           }
         </div>
 
-        <div class="text-sm tabular-nums text-[#6f675e] lg:min-w-20 lg:text-right">
-          {{ filteredOrders.length }} {{ filteredOrders.length === 1 ? 'order' : 'orders' }}
+        <div class="text-sm text-[#6f675e]">
+          {{ filteredOrders.length }} orders
         </div>
       </div>
     </div>
 
     <!-- LOADING -->
     @if (loading) {
-      <div class="py-20 text-center text-sm text-[#6f675e]">Loading orders…</div>
+      <div class="py-20 text-center text-sm text-[#6f675e]">
+        Loading orders...
+      </div>
     }
 
     @if (!loading) {
-      <div class="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
 
-        <!-- ORDER CARDS -->
-        <div class="xl:col-span-2">
-          <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+      <!-- ORDER CARDS -->
+      <!-- RTL makes the FIRST order appear on the RIGHT -->
+      <div
+        dir="rtl"
+        class="grid grid-cols-1 items-start gap-5 md:grid-cols-2 xl:grid-cols-3">
 
-            @for (order of filteredOrders; track order.id) {
-              <article class="flex flex-col overflow-hidden rounded-2xl border border-[#e4dfd6] bg-white shadow-[0_1px_2px_rgba(42,28,19,0.04)]">
+        @for (order of displayOrders; track order.id) {
 
-                <!-- thin status bar -->
-                <div class="h-1"
+          <article
+            dir="ltr"
+            class="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#e4dfd6] bg-white shadow-sm">
+
+            <!-- STATUS BAR -->
+            <div
+              class="h-1"
+              [ngClass]="{
+                'bg-[#d9a441]': order.status === 'pending',
+                'bg-[#5b8dbf]': order.status === 'preparing',
+                'bg-[#4f9a73]': order.status === 'ready',
+                'bg-[#bdb7ac]': order.status === 'completed',
+                'bg-[#c9695a]': order.status === 'cancelled'
+              }">
+            </div>
+
+            <!-- ORDER HEADER -->
+            <header
+              class="px-5 py-4"
+              [ngClass]="order.id === nowServing?.id && isActive(order)
+                ? 'bg-[#1c140e] text-[#f3e6d3]'
+                : 'bg-[#fbf8f2]'">
+
+              <div class="mb-3 flex items-center justify-between gap-2">
+
+                @if (isActive(order) && order.id === nowServing?.id) {
+                  <span class="rounded-full bg-[#d9a441] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#2a1c13]">
+                    NOW SERVING
+                  </span>
+                } @else if (isActive(order)) {
+                  <span class="rounded-full bg-[#f0e5d3] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#6b4b31]">
+                    UP NEXT #{{ getQueuePosition(order) }}
+                  </span>
+                } @else {
+                  <span class="rounded-full bg-[#eeebe5] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#5a5248]">
+                    ORDER HISTORY
+                  </span>
+                }
+
+                <span
+                  class="rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize"
                   [ngClass]="{
-                    'bg-[#d9a441]': order.status === 'pending',
-                    'bg-[#5b8dbf]': order.status === 'preparing',
-                    'bg-[#4f9a73]': order.status === 'ready',
-                    'bg-[#bdb7ac]': order.status === 'completed',
-                    'bg-[#c9695a]': order.status === 'cancelled'
-                  }"></div>
+                    'bg-[#fbf0d8] text-[#7a4f08]': order.status === 'pending',
+                    'bg-[#e4eef8] text-[#264f7a]': order.status === 'preparing',
+                    'bg-[#e2f2ea] text-[#1f5a3f]': order.status === 'ready',
+                    'bg-[#eeebe5] text-[#5a5248]': order.status === 'completed',
+                    'bg-[#fae8e5] text-[#85281b]': order.status === 'cancelled'
+                  }">
+                  {{ order.status }}
+                </span>
+              </div>
 
-                <!-- ORDER HEADER -->
-                <header class="flex items-start justify-between gap-3 bg-[#fbf8f2] px-5 py-4">
-                  <div class="flex min-w-0 items-center gap-3">
-                    <div class="flex h-11 min-w-11 items-center justify-center rounded-xl bg-[#2a1c13] px-2 text-sm font-semibold tabular-nums text-[#f3e6d3]"
-                      title="Queue number">
-                      {{ order.queue_no || order.id }}
-                    </div>
-                    <div class="min-w-0">
-                      <h3 class="break-all text-sm font-semibold tabular-nums text-[#2a1c13]">
-                        {{ order.order_number }}
-                      </h3>
-                      <p class="mt-0.5 text-xs text-[#6f675e]">
-                        Placed {{ order.created_at | date:'shortTime' }}
-                      </p>
-                    </div>
-                  </div>
+              <!-- NO QUEUE NUMBER BOX -->
+              <div>
+                <h3 class="break-all text-sm font-semibold">
+                  {{ order.order_number }}
+                </h3>
+                <p class="mt-1 text-xs opacity-70">
+                  Placed {{ order.created_at | date:'shortTime' }}
+                </p>
+              </div>
 
-                  <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize"
-                    [ngClass]="{
-                      'bg-[#fbf0d8] text-[#7a4f08]': order.status === 'pending',
-                      'bg-[#e4eef8] text-[#264f7a]': order.status === 'preparing',
-                      'bg-[#e2f2ea] text-[#1f5a3f]': order.status === 'ready',
-                      'bg-[#eeebe5] text-[#5a5248]': order.status === 'completed',
-                      'bg-[#fae8e5] text-[#85281b]': order.status === 'cancelled'
-                    }">
-                    <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                    {{ order.status }}
-                  </span>
-                </header>
+            </header>
 
-                <!-- CUSTOMER -->
-                <div class="flex items-center justify-between gap-3 px-5 pt-4">
-                  <div class="min-w-0">
-                    <p class="truncate text-sm font-semibold text-[#26211c]">{{ order.customer_name }}</p>
-                    <p class="mt-0.5 text-xs text-[#6f675e]">
-                      {{ order.cafe_table?.name || 'Counter' }}
-                    </p>
-                  </div>
-                  <span class="shrink-0 rounded-md bg-[#f0ebe2] px-2 py-1 text-[11px] font-medium text-[#5a4636]">
-                    {{ order.order_type === 'dine_in' ? 'Dine in' : 'Takeout' }}
-                  </span>
-                </div>
+            <!-- CUSTOMER -->
+            <div class="flex items-center justify-between gap-3 px-5 pt-4">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-semibold">
+                  {{ order.customer_name }}
+                </p>
+                <p class="mt-0.5 text-xs text-[#6f675e]">
+                  {{ order.cafe_table?.name || 'Counter' }}
+                </p>
+              </div>
 
-                <!-- ITEMS -->
-                <div class="px-5 pt-4">
-                  <div class="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">
-                    <span>Order items</span>
-                    <span>{{ order.items?.length || 0 }}</span>
-                  </div>
+              <span class="shrink-0 rounded-md bg-[#f0ebe2] px-2 py-1 text-[11px] font-medium text-[#5a4636]">
+                {{ order.order_type === 'dine_in' ? 'Dine in' : 'Takeout' }}
+              </span>
+            </div>
 
-                  <ul class="overflow-hidden rounded-xl border border-[#eeeae2]">
-                    @for (item of order.items ?? []; track item.id) {
-                      <li class="flex items-center gap-3 border-b border-[#eeeae2] px-3 py-2.5 last:border-b-0">
-                        <span class="flex h-7 min-w-7 items-center justify-center rounded-md bg-[#f3ede2] px-1.5 text-xs font-semibold tabular-nums text-[#5a4636]">
-                          {{ item.quantity }}×
-                        </span>
-                        <div class="min-w-0 flex-1">
-                          <p class="truncate text-sm font-medium text-[#26211c]">{{ item.product_name }}</p>
-                          @if (item.size) {
-                            <p class="text-[11px] text-[#6f675e]">{{ item.size }}</p>
-                          }
-                        </div>
-                        <span class="shrink-0 text-sm tabular-nums text-[#26211c]">
-                          {{ item.subtotal | currency:'PHP':'symbol':'1.2-2' }}
-                        </span>
-                      </li>
-                    }
-                  </ul>
-                </div>
+            <!-- ORDER ITEMS -->
+            <div class="px-5 pt-4">
+              <div class="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">
+                <span>Order items</span>
+                <span>{{ order.items?.length || 0 }}</span>
+              </div>
 
-                <!-- TOTAL + PAYMENT -->
-                <div class="px-5 py-4">
-                  <div class="flex items-end justify-between gap-3">
-                    <div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">Total amount</p>
-                      <p class="mt-0.5 text-2xl font-semibold tabular-nums text-[#2a1c13]">
-                        {{ order.total | currency:'PHP':'symbol':'1.2-2' }}
-                      </p>
-                    </div>
+              <ul class="overflow-hidden rounded-xl border border-[#eeeae2]">
+                @for (item of order.items ?? []; track item.id) {
+                  <li class="flex items-center gap-3 border-b border-[#eeeae2] px-3 py-3 last:border-0">
 
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                      [ngClass]="isPaid(order)
-                        ? 'bg-[#e2f2ea] text-[#1f5a3f]'
-                        : getLatestPayment(order)?.status === 'rejected'
-                          ? 'bg-[#fae8e5] text-[#85281b]'
-                          : 'bg-[#fbf0d8] text-[#7a4f08]'">
-                      <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                      {{ getPaymentStatus(order) }}
+                    <span class="flex h-7 min-w-7 items-center justify-center rounded-md bg-[#f3ede2] px-1.5 text-xs font-semibold text-[#5a4636]">
+                      {{ item.quantity }}×
                     </span>
-                  </div>
 
-                  <!-- PAYMENT METHOD -->
-                  <div class="mt-4 rounded-xl border border-[#eeeae2] bg-[#fbf9f5] p-3.5">
-                    <div class="flex items-center justify-between gap-2">
-                      <div class="flex items-center gap-2.5">
-                        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#4a3022] ring-1 ring-[#e4dfd6]">
-                          @if (isGcash(order)) {
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                              <rect x="6" y="2.5" width="8" height="15" rx="2" /><path d="M9 15h2" />
-                            </svg>
-                          } @else {
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                              <rect x="2.5" y="5.5" width="15" height="9" rx="1.5" /><circle cx="10" cy="10" r="2" />
-                            </svg>
-                          }
-                        </span>
-                        <div>
-                          <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">Payment method</p>
-                          <p class="text-sm font-semibold text-[#26211c]">{{ getPaymentMethodLabel(order) }}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <div class="min-w-0 flex-1">
+                      <p class="truncate text-sm font-medium">
+                        {{ item.product_name }}
+                      </p>
 
-                    <!-- GCASH -->
-                    @if (isGcash(order)) {
-                      <div class="mt-3 border-t border-[#eeeae2] pt-3">
-                        @if (getReferenceNumber(order)) {
-                          <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">Reference number</p>
-                          <div class="mt-1.5 flex items-center justify-between gap-2 rounded-lg border border-[#e4dfd6] bg-white px-3 py-2">
-                            <span class="break-all text-sm font-semibold tabular-nums tracking-wide text-[#26211c]">
-                              {{ getReferenceNumber(order) }}
-                            </span>
-                            <button
-                              type="button"
-                              (click)="copyReference(getReferenceNumber(order))"
-                              class="shrink-0 rounded-md px-2.5 py-1 text-xs font-medium text-[#4a3022] transition-colors hover:bg-[#f0ebe2]">
-                              Copy
-                            </button>
-                          </div>
-                        } @else {
-                          <p class="text-xs text-[#6f675e]">
-                            Waiting for the customer to submit the GCash reference number.
-                          </p>
-                        }
-
-                        @if (getLatestPayment(order)?.status === 'rejected') {
-                          <p class="mt-2 rounded-lg bg-[#fae8e5] px-3 py-2 text-xs text-[#85281b]">
-                            This payment was rejected. Waiting for a new reference.
-                          </p>
-                        }
-
-                        @if (canVerifyGcash(order)) {
-                          <div class="mt-3 grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              [disabled]="processing"
-                              (click)="openConfirm('verify', order)"
-                              class="h-10 rounded-lg bg-[#2f6b4a] text-sm font-medium text-white transition-colors hover:bg-[#265a3d] disabled:opacity-50">
-                              Verify payment
-                            </button>
-
-                            <button
-                              type="button"
-                              [disabled]="processing"
-                              (click)="openConfirm('reject', order)"
-                              class="h-10 rounded-lg border border-[#e4dfd6] bg-white text-sm font-medium text-[#85281b] transition-colors hover:bg-[#fdf4f2] disabled:opacity-50">
-                              Reject
-                            </button>
-                          </div>
-                        }
-                      </div>
-                    }
-
-                    <!-- CASH -->
-                    @if (isCash(order)) {
-                      <div class="mt-3 border-t border-[#eeeae2] pt-3">
-                        <p class="text-xs text-[#6f675e]">
-                          Customer pays at the counter. Record the payment once the cash is received.
+                      @if (item.size) {
+                        <p class="text-[11px] text-[#6f675e]">
+                          {{ item.size }}
                         </p>
+                      }
+                    </div>
 
-                        @if (!isPaid(order)) {
-                          <button
-                            type="button"
-                            [disabled]="processing"
-                            (click)="openConfirm('cash', order)"
-                            class="mt-3 h-10 w-full rounded-lg border border-[#d9d3c8] bg-white text-sm font-medium text-[#2a1c13] transition-colors hover:bg-[#f0ebe2] disabled:opacity-50">
-                            Record cash payment
-                          </button>
-                        }
+                    <span class="shrink-0 text-sm tabular-nums">
+                      {{ item.subtotal | currency:'PHP':'symbol':'1.2-2' }}
+                    </span>
+
+                  </li>
+                }
+              </ul>
+            </div>
+
+            <!-- TOTAL -->
+            <div class="px-5 py-4">
+              <div class="flex items-end justify-between gap-2">
+                <div>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">
+                    Total amount
+                  </p>
+                  <p class="mt-1 text-2xl font-semibold text-[#2a1c13]">
+                    {{ order.total | currency:'PHP':'symbol':'1.2-2' }}
+                  </p>
+                </div>
+
+                <span
+                  class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                  [ngClass]="isPaid(order)
+                    ? 'bg-[#e2f2ea] text-[#1f5a3f]'
+                    : getLatestPayment(order)?.status === 'rejected'
+                      ? 'bg-[#fae8e5] text-[#85281b]'
+                      : 'bg-[#fbf0d8] text-[#7a4f08]'">
+                  {{ getPaymentStatus(order) }}
+                </span>
+              </div>
+
+              <!-- PAYMENT DETAILS -->
+              <div class="mt-4 rounded-xl border border-[#eeeae2] bg-[#fbf9f5] p-3.5">
+
+                <div class="flex items-center gap-2.5">
+                  <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white text-[#4a3022] ring-1 ring-[#e4dfd6]">
+                    {{ isGcash(order) ? 'G' : '₱' }}
+                  </span>
+
+                  <div>
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">
+                      Payment method
+                    </p>
+                    <p class="text-sm font-semibold">
+                      {{ getPaymentMethodLabel(order) }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- GCASH DETAILS -->
+                @if (isGcash(order)) {
+                  <div class="mt-3 border-t border-[#eeeae2] pt-3">
+
+                    @if (getReferenceNumber(order)) {
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">
+                        Reference number
+                      </p>
+
+                      <div class="mt-1.5 flex items-center justify-between gap-2 rounded-lg border border-[#e4dfd6] bg-white px-3 py-2">
+                        <span class="break-all text-sm font-semibold">
+                          {{ getReferenceNumber(order) }}
+                        </span>
+
+                        <button
+                          type="button"
+                          (click)="copyReference(getReferenceNumber(order))"
+                          class="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-[#4a3022] hover:bg-[#f0ebe2]">
+                          Copy
+                        </button>
                       </div>
-                    }
-
-                    @if (isPaid(order)) {
-                      <p class="mt-3 flex items-center gap-2 border-t border-[#eeeae2] pt-3 text-xs font-medium text-[#1f5a3f]">
-                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                          <path d="m4.5 10.5 3.5 3.5 7.5-8" />
-                        </svg>
-                        Payment confirmed. This order can now be prepared.
+                    } @else {
+                      <p class="text-xs text-[#6f675e]">
+                        Waiting for GCash reference number.
                       </p>
                     }
-                  </div>
-                </div>
 
-                <!-- ACTIONS -->
-                <div class="mt-auto space-y-1.5 border-t border-[#eeeae2] bg-[#fbf8f2] px-5 py-4">
-                  @if (
-                    order.status === 'pending' ||
-                    order.status === 'preparing' ||
-                    order.status === 'ready'
-                  ) {
-                    <button
-                      type="button"
-                      [disabled]="!isPaid(order) || processing"
-                      (click)="updateStatus(order)"
-                      class="h-11 w-full rounded-xl text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4a3022]"
-                      [ngClass]="isPaid(order)
-                        ? 'bg-[#2a1c13] text-white hover:bg-[#3d2a1d]'
-                        : 'cursor-not-allowed bg-[#e9e4da] text-[#8a8176]'">
-                      @if (!isPaid(order)) {
-                        Awaiting payment
-                      } @else {
-                        {{ getStatusButtonLabel(order) }}
-                      }
-                    </button>
-
-                    <button
-                      type="button"
-                      [disabled]="processing"
-                      (click)="openConfirm('cancel', order)"
-                      class="h-9 w-full rounded-lg text-xs font-medium text-[#85281b] transition-colors hover:bg-[#fae8e5] disabled:opacity-50">
-                      Cancel order
-                    </button>
-                  }
-
-                  @if (order.status === 'completed') {
-                    <p class="py-1.5 text-center text-xs font-medium text-[#5a5248]">Order completed</p>
-                  }
-
-                  @if (order.status === 'cancelled') {
-                    <p class="py-1.5 text-center text-xs font-medium text-[#85281b]">Order cancelled</p>
-                  }
-                </div>
-
-              </article>
-            } @empty {
-              <div class="col-span-full rounded-2xl border border-dashed border-[#d9d3c8] bg-white px-6 py-16 text-center">
-                <h3 class="text-sm font-semibold text-[#26211c]">No orders found</h3>
-                <p class="mt-1 text-sm text-[#6f675e]">There are no orders matching your search.</p>
-              </div>
-            }
-
-          </div>
-        </div>
-
-        <!-- NOW SERVING -->
-        <aside class="xl:col-span-1">
-          <div class="xl:sticky xl:top-6">
-            <h2 class="text-base font-semibold text-[#2a1c13]">Now serving</h2>
-            <p class="mb-3 mt-0.5 text-xs text-[#6f675e]">The order at the head of the queue.</p>
-
-            @if (nowServing; as serving) {
-              <div class="overflow-hidden rounded-2xl border border-[#e4dfd6] bg-white shadow-[0_1px_2px_rgba(42,28,19,0.04)]">
-
-                <div class="bg-[#1c140e] px-5 py-4 text-[#f3e6d3]">
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="text-[10px] font-semibold uppercase tracking-wider text-[#c9a074]">Order number</span>
-                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold capitalize">
-                      <span class="h-1.5 w-1.5 rounded-full"
-                        [ngClass]="{
-                          'bg-[#e6b955]': serving.status === 'pending',
-                          'bg-[#7fb0e0]': serving.status === 'preparing',
-                          'bg-[#6dc29a]': serving.status === 'ready'
-                        }"></span>
-                      {{ serving.status }}
-                    </span>
-                  </div>
-
-                  <p class="mt-1.5 break-all text-xl font-semibold tabular-nums">
-                    {{ serving.order_number }}
-                  </p>
-                  <p class="mt-1 text-xs text-[#cdbfb0]">
-                    Placed {{ serving.created_at | date:'shortTime' }}
-                  </p>
-                </div>
-
-                <div class="px-5 py-4">
-                  <div class="flex items-center justify-between gap-3">
-                    <p class="truncate text-sm font-semibold text-[#26211c]">{{ serving.customer_name }}</p>
-                    <span class="shrink-0 rounded-md bg-[#f0ebe2] px-2 py-1 text-[11px] font-medium text-[#5a4636]">
-                      {{ serving.order_type === 'dine_in' ? 'Dine in' : 'Takeout' }}
-                    </span>
-                  </div>
-
-                  <ul class="mt-3 overflow-hidden rounded-xl border border-[#eeeae2]">
-                    @for (item of serving.items ?? []; track item.id) {
-                      <li class="flex items-center gap-3 border-b border-[#eeeae2] px-3 py-2.5 last:border-b-0">
-                        <span class="flex h-7 min-w-7 items-center justify-center rounded-md bg-[#f3ede2] px-1.5 text-xs font-semibold tabular-nums text-[#5a4636]">
-                          {{ item.quantity }}×
-                        </span>
-                        <div class="min-w-0 flex-1">
-                          <p class="truncate text-sm font-medium text-[#26211c]">{{ item.product_name }}</p>
-                          @if (item.size) {
-                            <p class="text-[11px] text-[#6f675e]">{{ item.size }}</p>
-                          }
-                        </div>
-                        <span class="shrink-0 text-sm tabular-nums text-[#26211c]">
-                          {{ item.subtotal | currency:'PHP':'symbol':'1.2-2' }}
-                        </span>
-                      </li>
+                    @if (getLatestPayment(order)?.status === 'rejected') {
+                      <p class="mt-2 rounded-lg bg-[#fae8e5] px-3 py-2 text-xs text-[#85281b]">
+                        Payment rejected. Waiting for a new reference.
+                      </p>
                     }
-                  </ul>
 
-                  <div class="mt-4 flex items-end justify-between">
-                    <span class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">Total amount</span>
-                    <span class="text-2xl font-semibold tabular-nums text-[#2a1c13]">
-                      {{ serving.total | currency:'PHP':'symbol':'1.2-2' }}
-                    </span>
+                    @if (canVerifyGcash(order)) {
+                      <div class="mt-3 grid grid-cols-2 gap-2">
+
+                        <button
+                          type="button"
+                          [disabled]="processing"
+                          (click)="openConfirm('verify', order)"
+                          class="h-10 rounded-lg bg-[#2f6b4a] text-sm font-medium text-white hover:bg-[#265a3d] disabled:opacity-50">
+                          Verify payment
+                        </button>
+
+                        <button
+                          type="button"
+                          [disabled]="processing"
+                          (click)="openConfirm('reject', order)"
+                          class="h-10 rounded-lg border border-[#e4dfd6] bg-white text-sm font-medium text-[#85281b] hover:bg-[#fdf4f2] disabled:opacity-50">
+                          Reject
+                        </button>
+
+                      </div>
+                    }
                   </div>
+                }
 
-                  <div class="mt-4 flex items-center justify-between rounded-xl border border-[#eeeae2] bg-[#fbf9f5] px-3.5 py-3">
-                    <div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-[#8a8176]">Payment</p>
-                      <p class="mt-0.5 text-sm font-semibold text-[#26211c]">{{ getPaymentMethodLabel(serving) }}</p>
-                    </div>
-                    <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                      [ngClass]="isPaid(serving)
-                        ? 'bg-[#e2f2ea] text-[#1f5a3f]'
-                        : getLatestPayment(serving)?.status === 'rejected'
-                          ? 'bg-[#fae8e5] text-[#85281b]'
-                          : 'bg-[#fbf0d8] text-[#7a4f08]'">
-                      <span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-                      {{ getPaymentStatus(serving) }}
-                    </span>
-                  </div>
-
-                  @if (isPaid(serving)) {
-                    <button
-                      type="button"
-                      [disabled]="processing"
-                      (click)="updateStatus(serving)"
-                      class="mt-4 h-11 w-full rounded-xl bg-[#2a1c13] text-sm font-semibold text-white transition-colors hover:bg-[#3d2a1d] disabled:opacity-50">
-                      {{ getStatusButtonLabel(serving) }}
-                    </button>
-                  } @else {
-                    <p class="mt-4 rounded-lg bg-[#f3efe7] px-3 py-2.5 text-center text-xs text-[#6f675e]">
-                      Waiting for payment confirmation.
+                <!-- CASH DETAILS -->
+                @if (isCash(order)) {
+                  <div class="mt-3 border-t border-[#eeeae2] pt-3">
+                    <p class="text-xs text-[#6f675e]">
+                      Customer pays at the counter.
                     </p>
-                  }
-                </div>
-              </div>
-            } @else {
-              <div class="rounded-2xl border border-dashed border-[#d9d3c8] bg-white px-6 py-12 text-center">
-                <p class="text-sm font-semibold text-[#26211c]">No active orders</p>
-                <p class="mt-1 text-xs text-[#6f675e]">New orders will appear here.</p>
-              </div>
-            }
 
-            <p class="mt-4 text-xs text-[#6f675e]">
-              {{ activeOrderCount }} {{ activeOrderCount === 1 ? 'order' : 'orders' }} in the queue.
+                    @if (!isPaid(order) && isActive(order)) {
+                      <button
+                        type="button"
+                        [disabled]="processing"
+                        (click)="openConfirm('cash', order)"
+                        class="mt-3 h-10 w-full rounded-lg border border-[#d9d3c8] bg-white text-sm font-medium hover:bg-[#f0ebe2] disabled:opacity-50">
+                        Record cash payment
+                      </button>
+                    }
+                  </div>
+                }
+
+                @if (isPaid(order)) {
+                  <p class="mt-3 border-t border-[#eeeae2] pt-3 text-xs font-medium text-[#1f5a3f]">
+                    ✓ Payment confirmed.
+                  </p>
+                }
+
+              </div>
+            </div>
+
+            <!-- ORDER ACTIONS -->
+            <div class="mt-auto space-y-2 border-t border-[#eeeae2] bg-[#fbf8f2] px-5 py-4">
+
+              @if (isActive(order)) {
+
+                <button
+                  type="button"
+                  [disabled]="!isPaid(order) || processing"
+                  (click)="updateStatus(order)"
+                  class="h-11 w-full rounded-xl text-sm font-semibold transition"
+                  [ngClass]="isPaid(order)
+                    ? 'bg-[#2a1c13] text-white hover:bg-[#3d2a1d]'
+                    : 'cursor-not-allowed bg-[#e9e4da] text-[#8a8176]'">
+
+                  {{ !isPaid(order)
+                    ? 'Awaiting payment'
+                    : getStatusButtonLabel(order)
+                  }}
+
+                </button>
+
+                <button
+                  type="button"
+                  [disabled]="processing"
+                  (click)="openConfirm('cancel', order)"
+                  class="h-9 w-full rounded-lg text-xs font-medium text-[#85281b] hover:bg-[#fae8e5] disabled:opacity-50">
+                  Cancel order
+                </button>
+
+              }
+
+              @if (order.status === 'completed') {
+                <p class="py-1.5 text-center text-xs font-medium text-[#5a5248]">
+                  Order completed
+                </p>
+              }
+
+              @if (order.status === 'cancelled') {
+                <p class="py-1.5 text-center text-xs font-medium text-[#85281b]">
+                  Order cancelled
+                </p>
+              }
+
+            </div>
+
+          </article>
+
+        } @empty {
+
+          <div dir="ltr" class="col-span-full rounded-2xl border border-dashed border-[#d9d3c8] bg-white px-6 py-16 text-center">
+            <h3 class="text-sm font-semibold text-[#26211c]">
+              No orders found
+            </h3>
+
+            <p class="mt-1 text-sm text-[#6f675e]">
+              {{ searchTerm
+                ? 'There are no orders matching your search.'
+                : 'No orders available in this section.'
+              }}
             </p>
           </div>
-        </aside>
+
+        }
 
       </div>
+
+      <!-- QUEUE FOOTER -->
+      @if (selectedFilter === 'active') {
+        <div class="mt-5 rounded-xl border border-[#e4dfd6] bg-white px-4 py-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs text-[#6f675e]">
+              <strong class="text-[#2a1c13]">{{ activeOrderCount }}</strong>
+              active orders.
+            </p>
+
+            <p class="text-xs text-[#8a8176]">
+              Automatically updates every 5 seconds.
+            </p>
+          </div>
+        </div>
+      }
+
     }
 
     <!-- CONFIRMATION MODAL -->
     @if (confirmType && confirmOrder) {
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-[#1c140e]/50 px-4"
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center bg-[#1c140e]/50 px-4"
         (click)="closeConfirm()">
-        <div role="dialog" aria-modal="true" [attr.aria-label]="confirmTitle"
+
+        <div
+          role="dialog"
+          aria-modal="true"
+          [attr.aria-label]="confirmTitle"
           class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
           (click)="$event.stopPropagation()">
 
           <div class="px-6 pt-6">
+
             <div class="flex items-start gap-3">
-              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-                [ngClass]="confirmIsDanger ? 'bg-[#fae8e5] text-[#85281b]' : 'bg-[#e2f2ea] text-[#1f5a3f]'">
-                @if (confirmIsDanger) {
-                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M10 6v5M10 14h.01" /><path d="M8.6 3.6 2.8 14a1.6 1.6 0 0 0 1.4 2.4h11.6a1.6 1.6 0 0 0 1.4-2.4L11.4 3.6a1.6 1.6 0 0 0-2.8 0Z" />
-                  </svg>
-                } @else {
-                  <svg class="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="m4.5 10.5 3.5 3.5 7.5-8" />
-                  </svg>
-                }
+              <span
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                [ngClass]="confirmIsDanger
+                  ? 'bg-[#fae8e5] text-[#85281b]'
+                  : 'bg-[#e2f2ea] text-[#1f5a3f]'">
+                {{ confirmIsDanger ? '!' : '✓' }}
               </span>
+
               <div>
-                <h3 class="text-base font-semibold text-[#2a1c13]">{{ confirmTitle }}</h3>
-                <p class="mt-1 text-sm text-[#6f675e]">{{ confirmMessage }}</p>
+                <h3 class="text-base font-semibold text-[#2a1c13]">
+                  {{ confirmTitle }}
+                </h3>
+
+                <p class="mt-1 text-sm text-[#6f675e]">
+                  {{ confirmMessage }}
+                </p>
               </div>
             </div>
 
             <div class="mt-5 divide-y divide-[#eeeae2] rounded-xl border border-[#eeeae2] bg-[#fbf9f5] text-sm">
+
               <div class="flex justify-between gap-3 px-4 py-2.5">
                 <span class="text-[#6f675e]">Order</span>
-                <span class="break-all font-medium tabular-nums text-[#26211c]">{{ confirmOrder.order_number }}</span>
+                <span class="break-all font-medium">
+                  {{ confirmOrder.order_number }}
+                </span>
               </div>
+
               <div class="flex justify-between gap-3 px-4 py-2.5">
                 <span class="text-[#6f675e]">Customer</span>
-                <span class="font-medium text-[#26211c]">{{ confirmOrder.customer_name }}</span>
+                <span class="font-medium">
+                  {{ confirmOrder.customer_name }}
+                </span>
               </div>
+
               @if (confirmType === 'verify' || confirmType === 'reject') {
                 <div class="flex justify-between gap-3 px-4 py-2.5">
                   <span class="text-[#6f675e]">Reference no.</span>
-                  <span class="break-all font-semibold tabular-nums tracking-wide text-[#26211c]">{{ getReferenceNumber(confirmOrder) }}</span>
+                  <span class="break-all font-semibold">
+                    {{ getReferenceNumber(confirmOrder) }}
+                  </span>
                 </div>
               }
+
               <div class="flex justify-between gap-3 px-4 py-2.5">
                 <span class="text-[#6f675e]">Amount</span>
-                <span class="font-semibold tabular-nums text-[#2a1c13]">{{ confirmOrder.total | currency:'PHP':'symbol':'1.2-2' }}</span>
+                <span class="font-semibold">
+                  {{ confirmOrder.total | currency:'PHP':'symbol':'1.2-2' }}
+                </span>
               </div>
+
             </div>
           </div>
 
           <div class="mt-6 grid grid-cols-2 gap-2 border-t border-[#eeeae2] bg-[#fbf8f2] px-6 py-4">
-            <button type="button" [disabled]="processing" (click)="closeConfirm()"
-              class="h-10 rounded-lg border border-[#d9d3c8] bg-white text-sm font-medium text-[#2a1c13] transition-colors hover:bg-[#f0ebe2] disabled:opacity-50">
+
+            <button
+              type="button"
+              [disabled]="processing"
+              (click)="closeConfirm()"
+              class="h-10 rounded-lg border border-[#d9d3c8] bg-white text-sm font-medium hover:bg-[#f0ebe2]">
               Back
             </button>
-            <button type="button" [disabled]="processing" (click)="runConfirm()"
-              class="h-10 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
-              [ngClass]="confirmIsDanger ? 'bg-[#a8372a] hover:bg-[#8f2e23]' : 'bg-[#2f6b4a] hover:bg-[#265a3d]'">
-              {{ processing ? 'Please wait…' : confirmLabel }}
+
+            <button
+              type="button"
+              [disabled]="processing"
+              (click)="runConfirm()"
+              class="h-10 rounded-lg text-sm font-medium text-white disabled:opacity-50"
+              [ngClass]="confirmIsDanger
+                ? 'bg-[#a8372a] hover:bg-[#8f2e23]'
+                : 'bg-[#2f6b4a] hover:bg-[#265a3d]'">
+              {{ processing ? 'Please wait...' : confirmLabel }}
             </button>
+
           </div>
+
         </div>
       </div>
     }
+
   </div>
 </div>
