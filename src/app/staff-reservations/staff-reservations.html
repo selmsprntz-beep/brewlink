@@ -1,0 +1,219 @@
+<div class="min-h-screen bg-[#f8f6f0] text-[#2c221e] p-4 sm:p-6 lg:p-8 font-sans">
+
+  <!-- Header & Status Filter Chips -->
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div>
+      <h2 class="text-2xl sm:text-3xl font-black text-[#3d2413] tracking-tight">Staff POS · Reservations</h2>
+      <p class="text-xs text-[#8c6d53] mt-1">
+        Review table reservations, then confirm or decline them. Earliest booking first.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+      @for (f of filters; track f.value) {
+        <button
+          type="button"
+          (click)="setFilter(f.value)"
+          class="px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer shadow-xs"
+          [ngClass]="filter() === f.value
+            ? 'bg-[#3d2413] text-white shadow-md'
+            : 'bg-white text-[#665245] border border-[#e3d8c4] hover:bg-[#f2ebd9]'"
+        >
+          {{ f.label }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Error Alert -->
+    @if (error()) {
+      <div class="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs text-red-800 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2">
+          <span>⚠️</span>
+          <span class="font-bold">{{ error() }}</span>
+        </div>
+        <button (click)="error.set('')" class="text-red-500 font-bold hover:text-red-800 cursor-pointer">✕</button>
+      </div>
+    }
+
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="text-center py-16">
+        <p class="text-[#5c3a21] animate-pulse text-sm font-semibold">Loading reservations…</p>
+      </div>
+    }
+
+    <!-- Empty State -->
+    @else if (reservations().length === 0) {
+      <div class="text-center py-20 bg-white border border-[#e3d8c4] rounded-3xl max-w-md mx-auto shadow-sm">
+        <span class="text-4xl block mb-2 opacity-40">🪑</span>
+        <h3 class="font-bold text-[#3d2413] text-base">No reservations</h3>
+        <p class="text-xs text-[#8c6d53] mt-1">There are no reservations matching this filter right now.</p>
+      </div>
+    }
+
+    <!-- Reservation Cards -->
+    @else {
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        @for (r of reservations(); track r.id) {
+          <div class="bg-white rounded-3xl p-5 border border-[#e8dfce] shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+
+              <!-- Card Header -->
+              <div class="flex items-center justify-between gap-3 pb-3 border-b border-[#f2ebd9] mb-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  @if (queueNo(r); as qn) {
+                    <div class="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-xl bg-[#3d2413] px-2 text-sm font-black text-white shadow-xs"
+                      title="Position in the queue (first to reserve = 1)">
+                      {{ qn }}
+                    </div>
+                  }
+                  <div class="min-w-0">
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">Reference</span>
+                    <h3 class="font-black text-[#3d2413] text-base break-all leading-tight">#{{ r.reference_code }}</h3>
+                  </div>
+                </div>
+
+                <span class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-xs shrink-0"
+                  [ngClass]="{
+                    'bg-amber-100 text-amber-800 border border-amber-200': r.status === 'pending',
+                    'bg-emerald-100 text-emerald-800 border border-emerald-200': r.status === 'confirmed',
+                    'bg-red-100 text-red-800 border border-red-200': r.status === 'declined',
+                    'bg-purple-100 text-purple-800 border border-purple-200': r.status === 'completed',
+                    'bg-stone-100 text-stone-700 border border-stone-200': r.status === 'cancelled'
+                  }">
+                  {{ r.status }}
+                </span>
+              </div>
+
+              <!-- Kanus-a nagpa-reserve -->
+              @if (bookedOn(r); as booked) {
+                <div class="mb-3 flex items-center justify-between rounded-xl bg-[#f8f6f0] px-3 py-2 text-[11px]">
+                  <span class="font-bold uppercase tracking-wider text-[#8c6d53]">Reserved on</span>
+                  <span class="font-black text-[#3d2413]">{{ booked | date: 'MMM d, h:mm a' }}</span>
+                </div>
+              }
+
+              <!-- Date / Time / Guests -->
+              <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                <div class="bg-[#f8f6f0] rounded-2xl p-2.5">
+                  <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Date</div>
+                  <div class="text-xs font-black text-[#3d2413] mt-0.5">{{ r.reservation_date | date: 'MMM d' }}</div>
+                </div>
+                <div class="bg-[#f8f6f0] rounded-2xl p-2.5">
+                  <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Time</div>
+                  <div class="text-xs font-black text-[#3d2413] mt-0.5">
+                    {{ asTime(r.reservation_time) ? (asTime(r.reservation_time) | date: 'h:mm a') : r.reservation_time }}
+                  </div>
+                </div>
+                <div class="bg-[#f8f6f0] rounded-2xl p-2.5">
+                  <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Guests</div>
+                  <div class="text-xs font-black text-[#3d2413] mt-0.5">{{ r.party_size }}</div>
+                </div>
+              </div>
+
+              <!-- Customer -->
+              <div class="text-xs text-[#8c6d53] space-y-1 mb-4 bg-[#f8f6f0] p-3 rounded-2xl font-medium">
+                <div class="text-[#3d2413] font-bold">👤 {{ r.customer_name }}</div>
+                <div>📞 {{ r.contact_number }}</div>
+                @if (r.email) {
+                  <div class="break-all">✉️ {{ r.email }}</div>
+                }
+              </div>
+
+              <!-- Notes -->
+              @if (r.notes) {
+                <div class="mb-4 bg-amber-50 border border-amber-200 text-amber-900 p-2.5 rounded-xl text-xs">
+                  <span class="font-bold">📝 Note:</span> {{ r.notes }}
+                </div>
+              }
+            </div>
+
+            <!-- Actions -->
+            <div class="flex flex-col gap-2 pt-3 border-t border-[#e8dfce]">
+
+              @if (r.status === 'pending') {
+                <button type="button"
+                  class="w-full py-2.5 px-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs transition-all cursor-pointer shadow-xs"
+                  (click)="confirmReservation(r)" [disabled]="busy()">
+                  ✓ Confirm Reservation
+                </button>
+                <button type="button"
+                  class="w-full py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-all cursor-pointer border border-red-200"
+                  (click)="decline(r)">
+                  Decline
+                </button>
+              }
+
+              @if (r.status === 'confirmed') {
+                <button type="button"
+                  class="w-full py-2.5 px-3 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] active:scale-95 text-white font-bold text-xs transition-all cursor-pointer shadow-xs"
+                  (click)="complete(r)" [disabled]="busy()">
+                  Mark Completed →
+                </button>
+                <button type="button"
+                  class="w-full py-2 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-all cursor-pointer border border-red-200"
+                  (click)="cancel(r)">
+                  Cancel Reservation
+                </button>
+              }
+
+              @if (r.status === 'declined' || r.status === 'completed' || r.status === 'cancelled') {
+                <p class="text-center text-[11px] font-semibold text-[#8c6d53] py-1">
+                  No further action needed.
+                </p>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+  <!-- ===================== CONFIRMATION POP-UP ===================== -->
+  @if (dialog(); as d) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      (click)="closeDialog()">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="confirm-title"
+        class="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl"
+        (click)="$event.stopPropagation()">
+
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-2xl"
+          [ngClass]="{
+            'bg-emerald-100': d.tone === 'green',
+            'bg-[#f2ebd9]': d.tone === 'brown',
+            'bg-red-100': d.tone === 'red'
+          }">
+          <span aria-hidden="true">{{ d.tone === 'green' ? '✅' : d.tone === 'brown' ? '🪑' : '⚠️' }}</span>
+        </div>
+
+        <h3 id="confirm-title" class="text-lg font-black text-[#3d2413]">{{ d.title }}</h3>
+
+        <p class="mt-2 whitespace-pre-line rounded-2xl bg-[#f8f6f0] p-3 text-sm font-semibold text-[#3d2413]">{{ d.message }}</p>
+
+        @if (d.warning) {
+          <p class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <span class="font-bold">Heads up:</span> {{ d.warning }}
+          </p>
+        }
+
+        <div class="mt-5 grid grid-cols-2 gap-2">
+          <button type="button" (click)="closeDialog()"
+            class="cursor-pointer rounded-xl border border-[#e3d8c4] bg-white py-2.5 text-xs font-bold text-[#665245] transition-all hover:bg-[#f2ebd9]">
+            Go back
+          </button>
+          <button type="button" (click)="acceptDialog()"
+            class="cursor-pointer rounded-xl py-2.5 text-xs font-bold text-white shadow-xs transition-all active:scale-95"
+            [ngClass]="{
+              'bg-emerald-700 hover:bg-emerald-800': d.tone === 'green',
+              'bg-[#5c3a21] hover:bg-[#3d2413]': d.tone === 'brown',
+              'bg-red-700 hover:bg-red-800': d.tone === 'red'
+            }">
+            {{ d.confirmLabel }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

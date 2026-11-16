@@ -1,0 +1,89 @@
+<div class="min-h-screen bg-[#f8f6f0] text-[#2c221e] p-4 sm:p-6 lg:p-8 font-sans">
+  
+  <!-- Top Header & Print Button -->
+  <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 no-print">
+    <div>
+      <h2 class="text-2xl sm:text-3xl font-black text-[#3d2413] tracking-tight">Tables &amp; QR Codes</h2>
+      <p class="text-xs text-[#8c6d53] mt-1">Manage cafe tables, generate dynamic table QR codes, and print stickers.</p>
+    </div>
+
+    <button 
+      type="button" 
+      (click)="print()"
+      class="bg-[#d4a373] hover:bg-[#bc8a5f] text-[#1c140e] font-extrabold text-xs px-5 py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer self-start sm:self-auto"
+    >
+      <span>🖨️</span> Print QR Codes
+    </button>
+  </div>
+
+  <!-- Error Alert -->
+  @if (error()) {
+    <div class="max-w-7xl mx-auto mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs text-red-800 flex items-center justify-between shadow-sm no-print">
+      <div class="flex items-center gap-2">
+        <span>⚠️</span>
+        <span class="font-bold">{{ error() }}</span>
+      </div>
+      <button (click)="error.set('')" class="text-red-500 font-bold hover:text-red-800 cursor-pointer">✕</button>
+    </div>
+  }
+
+  <!-- Add Table Card Form -->
+  <div class="max-w-7xl mx-auto bg-white border border-[#e3d8c4] rounded-3xl p-6 shadow-sm mb-8 no-print">
+    <h3 class="text-sm font-extrabold text-[#3d2413] uppercase tracking-wider mb-3">Add New Table</h3>
+    <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+      <input 
+        [(ngModel)]="newName" 
+        placeholder="e.g. Table 11 or VIP Lounge" 
+        class="flex-1 text-xs rounded-xl border border-[#d9ceb8] bg-[#f8f6f0] p-3 text-[#3d2413] font-bold focus:outline-none focus:border-[#5c3a21]"
+      />
+      <button 
+        type="button" 
+        class="bg-[#5c3a21] hover:bg-[#3d2413] text-white font-bold text-xs px-6 py-3 rounded-xl transition-all shadow-sm cursor-pointer"
+        (click)="add()"
+      >
+        + Add Table
+      </button>
+    </div>
+    
+  </div>
+
+  <!-- QR Codes Grid Layout -->
+  <div class="max-w-7xl mx-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+      @for (q of qrs(); track q.table.id) {
+        <div class="bg-white rounded-3xl p-6 border border-[#e8dfce] shadow-sm hover:shadow-md transition-all flex flex-col items-center text-center justify-between">
+          <div class="w-full">
+            <span class="text-[10px] uppercase font-bold tracking-widest text-[#8c6d53]">Blugre Cafe Table</span>
+            <h3 class="text-xl font-black text-[#3d2413] mt-1 mb-4">{{ q.table.name }}</h3>
+            
+            <!-- QR Code Image -->
+            <div class="bg-[#f8f6f0] p-4 rounded-2xl border border-[#e3d8c4] inline-block mb-3 shadow-inner">
+              @if (q.image) {
+                <img [src]="q.image" [alt]="'QR code for ' + q.table.name" class="w-40 h-40 object-contain mx-auto rounded-lg" />
+              } @else {
+                <div class="w-40 h-40 flex items-center justify-center text-xs text-[#8c6d53]">Generating QR...</div>
+              }
+            </div>
+
+            <p class="text-xs font-bold text-[#5c3a21] mb-4">Scan to order from this table</p>
+          </div>
+
+          <button 
+            type="button" 
+            class="w-full py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition-all border border-red-200 cursor-pointer no-print"
+            (click)="remove(q.table)"
+          >
+            Delete Table
+          </button>
+        </div>
+      } @empty {
+        <div class="col-span-full text-center py-16 bg-white border border-[#e3d8c4] rounded-3xl">
+          <span class="text-4xl block mb-2 opacity-40">🪑</span>
+          <p class="text-[#3d2413] font-bold text-sm">No tables added yet.</p>
+          <p class="text-xs text-[#8c6d53] mt-1">Add your first table above to generate QR codes.</p>
+        </div>
+      }
+    </div>
+  </div>
+
+</div>

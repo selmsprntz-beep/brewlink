@@ -1,0 +1,260 @@
+<div class="min-h-screen bg-[#1c140e] text-[#f5efe6] font-sans flex flex-col justify-between">
+      
+  <!-- Top Header Navigation -->
+  <header class="flex items-center justify-between p-6 sm:p-8 max-w-7xl w-full mx-auto">
+    <a routerLink="/menu" class="flex items-center gap-3 no-underline group">
+      <span class="text-3xl text-[#d4a373] group-hover:scale-110 transition-transform">☕</span>
+      <div>
+        <h1 class="text-lg sm:text-xl font-black tracking-widest text-[#f5efe6] uppercase">BREWLINK</h1>
+        <p class="text-[10px] text-[#d4a373] tracking-widest uppercase font-bold">Blugre Cafe</p>
+      </div>
+    </a>
+    <nav class="flex items-center gap-4 sm:gap-6 text-xs font-semibold tracking-wider uppercase">
+      <a routerLink="/menu" class="text-[#d0c0b0] hover:text-[#d4a373] transition-colors">Menu</a>
+      <a routerLink="/reservation" class="text-[#d0c0b0] hover:text-[#d4a373] transition-colors">Reserve a table</a>
+    </nav>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-xl w-full mx-auto p-4 sm:p-6 my-auto">
+    @if (error()) {
+      <div class="bg-red-900/50 border border-red-500/50 text-red-200 p-4 rounded-2xl text-xs text-center backdrop-blur-md shadow-xl">
+        ⚠️ {{ error() }}
+      </div>
+    } @else if (!order()) {
+      <div class="text-center py-20">
+        <div class="inline-block animate-spin text-3xl mb-3 text-[#d4a373]">☕</div>
+        <p class="text-[#d0c0b0] text-sm animate-pulse">Loading your order status…</p>
+      </div>
+    } @else {
+      <!-- Order Card Container -->
+      <div class="bg-[#f8f6f0] text-[#2c221e] rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#e8dfce]">
+        
+        <!-- Header Status Row -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-[#e8dfce]">
+          <div>
+            <span class="text-[10px] uppercase font-bold tracking-widest text-[#8c6d53]">Order Tracking</span>
+            <h2 class="text-2xl font-black text-[#3d2413]">#{{ order()!.order_number }}</h2>
+          </div>
+          <span class="px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider self-start sm:self-auto shadow-sm"
+            [class.bg-amber-100]="order()!.status === 'pending'"
+            [class.text-amber-800]="order()!.status === 'pending'"
+            [class.bg-blue-100]="order()!.status === 'preparing'"
+            [class.text-blue-800]="order()!.status === 'preparing'"
+            [class.bg-emerald-100]="order()!.status === 'ready'"
+            [class.text-emerald-800]="order()!.status === 'ready'"
+            [class.bg-purple-100]="order()!.status === 'completed'"
+            [class.text-purple-800]="order()!.status === 'completed'"
+            [class.bg-red-100]="order()!.status === 'cancelled'"
+            [class.text-red-800]="order()!.status === 'cancelled'">
+            {{ order()!.status }}
+          </span>
+        </div>
+
+        <!-- Customer Meta Info -->
+        <div class="py-4 text-xs text-[#8c6d53] flex flex-wrap items-center gap-2 font-medium">
+          <span class="font-bold text-[#3d2413] text-sm">{{ order()!.customer_name }}</span>
+          <span>•</span>
+          <span class="bg-[#e8dcbe]/60 px-2.5 py-0.5 rounded-md text-[#5c3a21] font-bold">
+            {{ order()!.order_type === 'dine_in' ? 'Dine In' : 'Takeout' }}
+          </span>
+          @if (order()!.cafe_table) {
+            <span>•</span>
+            <span class="text-[#5c3a21] font-semibold">📍 {{ order()!.cafe_table!.name }}</span>
+          }
+          <span>•</span>
+          <span>{{ order()!.created_at | date: 'shortTime' }}</span>
+        </div>
+
+        <!-- Cancelled Alert -->
+        @if (order()!.status === 'cancelled') {
+          <div class="bg-red-50 border border-red-200 text-red-800 p-4 rounded-2xl text-xs my-4 shadow-sm">
+            This order was cancelled. Please ask the cashier if you have questions.
+          </div>
+        } @else {
+          <!-- Modern Progress Steps Tracker -->
+          <div class="my-6">
+            <div class="grid grid-cols-4 gap-2 relative">
+              @for (s of steps; track s; let i = $index) {
+                <div class="flex flex-col items-center text-center">
+                  <div class="w-9 h-9 rounded-full flex items-center justify-center text-xs font-black transition-all shadow-sm"
+                    [class.bg-[#5c3a21]]="i === stepIndex()"
+                    [class.text-white]="i <= stepIndex()"
+                    [class.bg-emerald-600]="i < stepIndex()"
+                    [class.bg-[#e3d8c4]]="i > stepIndex()"
+                    [class.text-[#8c6d53]]="i > stepIndex()">
+                    @if (i < stepIndex()) {
+                      ✓
+                    } @else {
+                      {{ i + 1 }}
+                    }
+                  </div>
+                  <span class="text-[10px] sm:text-xs font-bold mt-2 uppercase tracking-wider"
+                    [class.text-[#3d2413]]="i <= stepIndex()"
+                    [class.text-[#a3907c]]="i > stepIndex()">
+                    {{ labels[i] }}
+                  </span>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Ready Alert Banner -->
+          @if (order()!.status === 'ready') {
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-2xl text-xs font-bold text-center my-4 animate-bounce shadow-sm">
+              🎉 Your order is ready at the counter! Please claim it now.
+            </div>
+          }
+        }
+
+        <!-- Order Items List -->
+        <div class="mt-6 pt-6 border-t border-[#e8dfce]">
+          <h3 class="text-xs font-black uppercase tracking-wider text-[#8c6d53] mb-3">Order Summary</h3>
+          <div class="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+            @for (i of order()!.items; track i.id) {
+              <div class="flex items-center justify-between text-xs py-1.5 border-b border-[#f2ebd9]">
+                <span class="font-bold text-[#3d2413]">{{ i.quantity }} × {{ i.product_name }}</span>
+                <span class="font-semibold text-[#5c3a21]">{{ i.subtotal | currency: 'PHP' }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Total Price Section -->
+        <div class="pt-4 mt-4 border-t-2 border-[#e8dfce] flex items-center justify-between text-base font-black text-[#3d2413]">
+          <span>Total Amount</span>
+          <span class="text-[#5c3a21] text-lg">{{ order()!.total | currency: 'PHP' }}</span>
+        </div>
+
+        @if (paymentMethod() === 'gcash') {
+          <!-- GCASH PAYMENT: hidden once paid / verified / order is being processed, or cancelled -->
+          @if (order()!.status !== 'cancelled' && !paymentCompleted()) {
+            <div class="mt-6 rounded-2xl border border-[#e8dfce] bg-white p-4 sm:p-5">
+              <h3 class="text-xs font-black uppercase tracking-wider text-[#8c6d53]">
+                GCash Payment
+              </h3>
+
+              @if (payState() === 'pending') {
+                <div class="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+                  <p class="font-bold">Waiting for the cashier to verify your payment.</p>
+                  @if (gcashPayment()?.reference_no) {
+                    <p class="mt-1">
+                      Reference No.: <strong>{{ gcashPayment()!.reference_no }}</strong>
+                    </p>
+                  }
+                </div>
+              } @else {
+                @if (payState() === 'rejected') {
+                  <div class="mt-3 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-800">
+                    We could not verify your payment. Please check your Reference No. and send it
+                    again, or ask the cashier for help.
+                  </div>
+                }
+
+                <div class="mt-3 rounded-xl bg-[#f1e6d7] p-3 text-center">
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">
+                    Amount to pay
+                  </p>
+                  <p class="mt-1 text-2xl font-black text-[#3d2413]">
+                    {{ order()!.total | currency: 'PHP':'symbol':'1.2-2' }}
+                  </p>
+                </div>
+
+                <ol class="mt-4 space-y-2.5 text-xs text-[#3d2413]">
+                  <li class="flex gap-2.5">
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5c3a21] text-[10px] font-black text-white">1</span>
+                    <span>Open your <strong>GCash</strong> app, then tap <strong>Send Money</strong> (or <strong>QR</strong> to scan).</span>
+                  </li>
+                  <li class="flex gap-2.5">
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5c3a21] text-[10px] font-black text-white">2</span>
+                    <span>Scan the QR code below, or send to the GCash number below.</span>
+                  </li>
+                  <li class="flex gap-2.5">
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5c3a21] text-[10px] font-black text-white">3</span>
+                    <span>Enter the exact amount <strong>{{ order()!.total | currency: 'PHP':'symbol':'1.2-2' }}</strong> and confirm.</span>
+                  </li>
+                  <li class="flex gap-2.5">
+                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5c3a21] text-[10px] font-black text-white">4</span>
+                    <span>Type the <strong>Reference No.</strong> below, then tap <strong>Submit</strong>.</span>
+                  </li>
+                </ol>
+
+                <div class="mt-4 rounded-xl border border-[#e8dfce] bg-[#f8f6f0] p-4 text-center">
+                  @if (gcash.qrImage && !qrFailed()) {
+                    <img
+                      [src]="gcash.qrImage"
+                      alt="GCash QR code of Blugre Cafe"
+                      class="mx-auto h-44 w-44 rounded-lg object-contain"
+                      (error)="qrFailed.set(true)"
+                    />
+                  }
+
+                  <p class="mt-3 text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">
+                    GCash number
+                  </p>
+                  <p class="mt-1 text-lg font-black tracking-wide text-[#3d2413]">
+                    {{ gcash.number }}
+                  </p>
+                  <p class="text-xs text-[#8c6d53]">{{ gcash.accountName }}</p>
+
+                  <button
+                    type="button"
+                    (click)="copyNumber()"
+                    class="mt-3 rounded-lg border border-[#e3d8c4] bg-white px-4 py-2 text-[11px] font-bold text-[#5c3a21] transition-colors hover:bg-[#f2ebd9]"
+                  >
+                    {{ copied() ? 'Copied ✓' : 'Copy number' }}
+                  </button>
+                </div>
+
+                <form (ngSubmit)="submitReference()" class="mt-4 space-y-3">
+                  <div>
+                    <label for="gcashRef" class="mb-1.5 block text-[11px] font-black uppercase tracking-wider text-[#8c6d53]">
+                      GCash Reference No.
+                    </label>
+                    <input
+                      id="gcashRef"
+                      name="gcashRef"
+                      [(ngModel)]="gcashRef"
+                      maxlength="30"
+                      autocomplete="off"
+                      placeholder="e.g. 1234 567 890123"
+                      class="w-full rounded-xl border border-[#d9ceb8] bg-[#f8f6f0] p-3 text-xs text-[#3d2413] focus:border-[#5c3a21] focus:outline-none focus:ring-1 focus:ring-[#5c3a21]"
+                    />
+                  </div>
+
+                  @if (payError()) {
+                    <p class="rounded-lg bg-red-50 p-3 text-xs text-red-700">{{ payError() }}</p>
+                  }
+
+                  <button
+                    type="submit"
+                    [disabled]="submitting()"
+                    class="w-full rounded-xl bg-[#5c3a21] px-4 py-3.5 text-xs font-extrabold text-white transition-colors hover:bg-[#3d2413] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {{ submitting() ? 'Sending...' : 'Submit Reference No. →' }}
+                  </button>
+                </form>
+              }
+            </div>
+          }
+        } @else {
+          <p class="text-[11px] text-[#8c6d53] text-center mt-6 bg-[#f2ebd9]/50 p-3 rounded-xl">
+            💳 Payment is made directly at the counter. This status page updates automatically.
+          </p>
+        }
+      </div>
+
+      <!-- Action Button Back to Menu -->
+      <div class="text-center mt-6">
+        <a routerLink="/menu" class="inline-block bg-[#d4a373] hover:bg-[#bc8a5f] text-[#1c140e] font-extrabold text-xs px-8 py-3.5 rounded-full shadow-lg transition-all hover:scale-105">
+          ← Order More Items
+        </a>
+      </div>
+    }
+  </main>
+
+  <!-- Footer Info Bar -->
+  <footer class="p-6 text-center text-xs text-[#d0c0b0]/60">
+    <p>© Blugre Cafe · BrewLink Ordering System</p>
+  </footer>
+</div>

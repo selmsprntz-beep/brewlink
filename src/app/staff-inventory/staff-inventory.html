@@ -1,0 +1,539 @@
+<div class="min-h-screen bg-[#f8f6f0] text-[#2c221e] p-4 sm:p-6 lg:p-8 font-sans">
+
+  <!-- Header -->
+  <div class="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5">
+    <div>
+      <h2 class="text-2xl sm:text-3xl font-black text-[#3d2413] tracking-tight">Staff POS · Inventory</h2>
+      <p class="text-xs text-[#8c6d53] mt-1">
+        Each menu item has its own ingredients. Stock is deducted automatically when an order is completed.
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <button type="button" (click)="view.set('products')"
+        class="px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+        [ngClass]="view() === 'products'
+          ? 'bg-[#3d2413] text-white shadow-md'
+          : 'bg-white text-[#665245] border border-[#e3d8c4] hover:bg-[#f2ebd9]'">
+        ☕ By menu item
+      </button>
+      <button type="button" (click)="view.set('ingredients')"
+        class="px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer shadow-xs"
+        [ngClass]="view() === 'ingredients'
+          ? 'bg-[#3d2413] text-white shadow-md'
+          : 'bg-white text-[#665245] border border-[#e3d8c4] hover:bg-[#f2ebd9]'">
+        📦 All ingredients
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Error -->
+    @if (error()) {
+      <div class="mb-5 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs text-red-800 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2">
+          <span>⚠️</span>
+          <span class="font-bold">{{ error() }}</span>
+        </div>
+        <button (click)="error.set('')" class="text-red-500 font-bold hover:text-red-800 cursor-pointer">✕</button>
+      </div>
+    }
+
+    <!-- Recipes API wala pa mo-gana -->
+    @if (recipesFailed()) {
+      <div class="mb-5 rounded-2xl bg-amber-50 border border-amber-300 p-4 text-xs text-amber-900 shadow-sm">
+        ⚠️ <span class="font-black">Recipes could not be loaded.</span>
+        Please check that the server is running and the database is updated.
+      </div>
+    }
+
+    <!-- Low stock warning -->
+    @if (lowItems().length > 0) {
+      <div class="mb-5 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-xs text-amber-900 shadow-sm">
+        ⚠️ <span class="font-black">{{ lowItems().length }} ingredient(s) low on stock:</span>
+        @for (i of lowItems(); track i.id; let last = $last) {
+          {{ i.name }} ({{ i.quantity | number: '1.0-2' }} {{ i.unit }}){{ last ? '' : ', ' }}
+        }
+      </div>
+    }
+
+    <!-- Add / Edit ingredient form -->
+    @if (itemFormOpen()) {
+      <div class="mb-6 bg-white rounded-3xl p-5 sm:p-6 border border-[#e8dfce] shadow-sm">
+        <h3 class="font-black text-[#3d2413] text-lg mb-4">{{ itemEditingId() ? 'Edit ingredient' : 'New ingredient' }}</h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Name</label>
+            <input [(ngModel)]="form.name" placeholder="e.g. Coffee beans"
+              class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Unit</label>
+            <input [(ngModel)]="form.unit" placeholder="g, ml, pcs"
+              class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+          </div>
+
+          @if (!itemEditingId()) {
+            <div>
+              <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Starting stock</label>
+              <input type="number" min="0" [(ngModel)]="form.quantity"
+                class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+            </div>
+          }
+
+          <div>
+            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Low-stock alert at</label>
+            <input type="number" min="0" [(ngModel)]="form.low_stock_threshold"
+              class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-[#f8f6f0] text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-4">
+          <button type="button" (click)="saveItem()"
+            class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs transition-all cursor-pointer shadow-xs">
+            Save
+          </button>
+          <button type="button" (click)="itemFormOpen.set(false)"
+            class="px-5 py-2.5 rounded-xl bg-white hover:bg-[#f2ebd9] text-[#665245] border border-[#e3d8c4] font-bold text-xs transition-all cursor-pointer">
+            Cancel
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Search -->
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div class="relative flex-1 max-w-xl">
+        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-[#8c6d53] text-sm pointer-events-none">🔍</span>
+        <input type="text" [ngModel]="q()" (ngModelChange)="q.set($event)"
+          [placeholder]="view() === 'products' ? 'Search menu item or ingredient…' : 'Search ingredient…'"
+          class="w-full pl-11 pr-10 py-3 rounded-2xl border border-[#e3d8c4] bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+        @if (q()) {
+          <button type="button" (click)="q.set('')" aria-label="Clear search"
+            class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#f2ebd9] hover:bg-[#e3d8c4] text-[#5c3a21] text-xs font-bold cursor-pointer">✕</button>
+        }
+      </div>
+
+      <button type="button" (click)="toggleMovements()"
+        class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer self-start sm:self-auto"
+        [ngClass]="showMovements()
+          ? 'bg-[#3d2413] text-white shadow-md'
+          : 'bg-white text-[#665245] border border-[#e3d8c4] hover:bg-[#f2ebd9]'">
+        🧾 Deduction log
+      </button>
+
+      @if (view() === 'products') {
+        <button type="button" (click)="onlyIssues.set(!onlyIssues())"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer self-start sm:self-auto"
+          [ngClass]="onlyIssues()
+            ? 'bg-amber-600 text-white shadow-md'
+            : 'bg-white text-[#665245] border border-[#e3d8c4] hover:bg-[#f2ebd9]'">
+          ⚠ Needs attention ({{ issueCount() }})
+        </button>
+      } @else {
+        <button type="button" (click)="startAddItem()"
+          class="px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-[#5c3a21] border border-dashed border-[#d4a373] hover:bg-[#f2ebd9] transition-all cursor-pointer self-start sm:self-auto">
+          + New ingredient
+        </button>
+      }
+    </div>
+
+    <!-- ===================== DEDUCTION HISTORY ===================== -->
+    @if (showMovements()) {
+      <div class="mb-6 bg-white rounded-3xl border border-[#e8dfce] shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-5 py-3 border-b border-[#f2ebd9]">
+          <div>
+            <h3 class="font-black text-[#3d2413] text-base">Stock deduction log</h3>
+            <p class="text-[11px] text-[#8c6d53]">When an order is completed, each ingredient used is listed here: before → deducted → left.</p>
+          </div>
+          <button type="button" (click)="toggleMovements()"
+            class="w-8 h-8 rounded-full bg-[#f2ebd9] hover:bg-[#e3d8c4] text-[#5c3a21] text-xs font-bold cursor-pointer" aria-label="Close stock log">✕</button>
+        </div>
+
+        @if (movementGroups().length === 0) {
+          <p class="px-5 py-8 text-center text-xs text-[#8c6d53]">No stock changes yet.</p>
+        } @else {
+          <div class="max-h-96 overflow-y-auto p-4 space-y-3">
+            @for (g of movementGroups(); track g.key) {
+              <div class="rounded-2xl border border-[#efe6d3] overflow-hidden">
+                <div class="flex items-center justify-between gap-3 px-4 py-2 bg-[#f8f6f0]">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shrink-0"
+                      [ngClass]="g.kind === 'order' ? 'bg-[#3d2413] text-white' : 'bg-emerald-100 text-emerald-800'">
+                      {{ g.kind === 'order' ? 'Order' : 'Stock' }}
+                    </span>
+                    <span class="font-black text-xs text-[#3d2413] truncate">{{ g.title }}</span>
+                  </div>
+                  <span class="text-[11px] text-[#8c6d53] shrink-0">{{ g.at | date: 'MMM d, h:mm a' }}</span>
+                </div>
+
+                <div class="grid grid-cols-12 gap-2 px-4 py-1.5 text-[9px] font-black uppercase tracking-wider text-[#8c6d53] border-t border-[#f5eee0]">
+                  <div class="col-span-5">Ingredient</div>
+                  <div class="col-span-2 text-right">Before</div>
+                  <div class="col-span-3 text-right">{{ g.kind === 'order' ? 'Deducted' : 'Change' }}</div>
+                  <div class="col-span-2 text-right">Left</div>
+                </div>
+
+                @for (r of g.rows; track r.id) {
+                  <div class="grid grid-cols-12 gap-2 px-4 py-2 text-xs items-center border-t border-[#f5eee0]">
+                    <div class="col-span-5 font-bold text-[#3d2413] truncate">{{ r.name }}</div>
+                    <div class="col-span-2 text-right text-[#665245] tabular-nums">
+                      {{ r.before !== null ? (r.before | number: '1.0-2') : '—' }}
+                    </div>
+                    <div class="col-span-3 text-right font-black tabular-nums"
+                      [ngClass]="r.type === 'out' ? 'text-red-700' : r.type === 'in' ? 'text-emerald-700' : 'text-[#5c3a21]'">
+                      {{ r.sign }}{{ r.qty | number: '1.0-2' }} {{ r.unit }}
+                    </div>
+                    <div class="col-span-2 text-right font-black text-[#3d2413] tabular-nums">
+                      {{ r.after !== null ? (r.after | number: '1.0-2') : '—' }}
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="text-center py-16">
+        <p class="text-[#5c3a21] animate-pulse text-sm font-semibold">Loading inventory…</p>
+      </div>
+    } @else if (view() === 'products') {
+
+      <!-- ===================== BY MENU ITEM ===================== -->
+      @if (visibleProducts().length === 0) {
+        <div class="text-center py-20 bg-white border border-[#e3d8c4] rounded-3xl max-w-md mx-auto shadow-sm">
+          <span class="text-4xl block mb-2 opacity-40">☕</span>
+          <h3 class="font-bold text-[#3d2413] text-base">No menu items to show</h3>
+          <p class="text-xs text-[#8c6d53] mt-1">
+            {{ q() || onlyIssues() ? 'Try clearing the search or filter.' : 'Add items in the Menu page first.' }}
+          </p>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          @for (p of visibleProducts(); track p.id) {
+            <article class="bg-white rounded-3xl border border-l-[6px] shadow-sm hover:shadow-md transition-all overflow-hidden"
+              [ngClass]="{
+                'border-[#e8dfce] border-l-emerald-500': status(p) === 'ok',
+                'border-[#e8dfce] border-l-amber-400': status(p) === 'low',
+                'border-[#e8dfce] border-l-red-500': status(p) === 'out',
+                'border-[#e8dfce] border-l-stone-300': status(p) === 'none'
+              }">
+
+              <!-- Title -->
+              <div class="flex items-start justify-between gap-3 px-5 pt-4 pb-3 border-b border-[#f2ebd9]">
+                <div class="min-w-0">
+                  <h3 class="font-black text-[#3d2413] text-lg leading-tight">{{ p.name }}</h3>
+                  <p class="text-[11px] font-bold uppercase tracking-wider text-[#8c6d53] mt-0.5">
+                    {{ p.category?.name }}{{ hasSizes(p) ? ' · Tall / Grande' : '' }}
+                  </p>
+                </div>
+
+                <span class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shrink-0"
+                  [ngClass]="{
+                    'bg-emerald-100 text-emerald-800 border border-emerald-200': status(p) === 'ok',
+                    'bg-amber-100 text-amber-800 border border-amber-200': status(p) === 'low',
+                    'bg-red-100 text-red-800 border border-red-200': status(p) === 'out',
+                    'bg-stone-100 text-stone-600 border border-stone-200': status(p) === 'none'
+                  }">
+                  {{ status(p) === 'ok' ? 'Ready' : status(p) === 'low' ? 'Low' : status(p) === 'out' ? 'Out of stock' : 'No recipe' }}
+                </span>
+              </div>
+
+              <div class="px-5 py-4">
+
+                @if (recipeEditingId() !== p.id) {
+
+                  <!-- VIEW -->
+                  @if (p.ingredients.length === 0) {
+                    <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-4">
+                      No ingredients yet. Stock will <span class="font-bold">not</span> be deducted when this item is sold.
+                    </p>
+                  } @else {
+
+                    <!-- Alert kung gamay na / ubos na ang stock -->
+                    @if (lowLines(p).length > 0) {
+                      <div class="mb-4 rounded-2xl px-4 py-3 border"
+                        [ngClass]="status(p) === 'out' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-900'">
+                        <div class="text-[11px] font-black uppercase tracking-wider mb-1">
+                          {{ status(p) === 'out' ? '⚠ Out of stock' : '⚠ Low stock' }}
+                        </div>
+                        <ul class="text-xs space-y-0.5">
+                          @for (x of lowLines(p); track x.name) {
+                            <li>
+                              <span class="font-bold">{{ x.name }}</span>
+                              — {{ x.out ? 'out of stock' : (x.qty | number: '1.0-2') + ' ' + x.unit + ' left' }}
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+
+                    <!-- Tall / Grande tabs (amounts ra ang lahi) -->
+                    @if (hasSizes(p)) {
+                      <div class="mb-3 grid grid-cols-2 gap-1 p-1 rounded-2xl bg-[#f2ebd9]">
+                        @for (s of sizeTabs; track s) {
+                          <button type="button" (click)="setTab(p, s)"
+                            class="py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                            [ngClass]="tabOf(p) === s
+                              ? 'bg-[#3d2413] text-white shadow-sm'
+                              : 'text-[#665245] hover:bg-white/70'">
+                            {{ s }}
+                          </button>
+                        }
+                      </div>
+                    }
+
+                    <!-- Ingredient list (para sa napiling size) -->
+                    <div class="rounded-2xl border border-[#efe6d3] overflow-hidden mb-4">
+                      <div class="grid grid-cols-12 gap-2 px-3 py-2 bg-[#f2ebd9] text-[9px] font-black uppercase tracking-wider text-[#5c3a21]">
+                        <div class="col-span-5">Ingredient</div>
+                        <div class="col-span-4 text-right">Deducted / order</div>
+                        <div class="col-span-3 text-right">In stock</div>
+                      </div>
+
+                      @for (l of linesFor(p, tabOf(p)); track l.inventory_item_id) {
+                        <div class="grid grid-cols-12 gap-2 px-3 py-2.5 text-xs items-center border-t border-[#f5eee0]">
+                          <div class="col-span-5 font-bold text-[#3d2413] flex items-center gap-1.5 min-w-0">
+                            <span class="w-2 h-2 rounded-full shrink-0"
+                              [ngClass]="{
+                                'bg-emerald-500': lineState(l) === 'ok',
+                                'bg-amber-400': lineState(l) === 'low',
+                                'bg-red-500': lineState(l) === 'out'
+                              }"></span>
+                            <span class="truncate">{{ nameOf(l) }}</span>
+                          </div>
+
+                          <div class="col-span-4 text-right text-[#665245] font-semibold">
+                            {{ perServing(l, tabOf(p)) | number: '1.0-2' }} {{ unitOf(l) }}
+                          </div>
+
+                          <div class="col-span-3 text-right font-black"
+                            [ngClass]="{
+                              'text-[#3d2413]': lineState(l) === 'ok',
+                              'text-amber-700': lineState(l) === 'low',
+                              'text-red-700': lineState(l) === 'out'
+                            }">
+                            {{ stockOf(l) | number: '1.0-2' }}
+                            <span class="text-[10px] font-bold text-[#8c6d53]">{{ unitOf(l) }}</span>
+                          </div>
+                        </div>
+                      } @empty {
+                        <p class="px-3 py-4 text-xs text-center text-amber-800 bg-amber-50">
+                          No {{ tabOf(p) }} ingredients yet. Nothing will be deducted for a {{ tabOf(p) }} order.
+                        </p>
+                      }
+                    </div>
+                  }
+
+                  <button type="button" (click)="startRecipe(p)"
+                    class="w-full py-2.5 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] active:scale-95 text-white font-bold text-xs transition-all cursor-pointer shadow-xs">
+                    {{ p.ingredients.length === 0 ? '+ Set up ingredients' : 'Edit ingredients' }}
+                  </button>
+
+                } @else {
+
+                  <!-- EDIT RECIPE: Tall ug Grande lahi ang ingredients -->
+                  <div class="space-y-3">
+
+                    @if (hasSizes(p)) {
+                      <div class="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-[#f2ebd9]">
+                        @for (s of sizeTabs; track s) {
+                          <button type="button" (click)="switchEditSize(s)"
+                            class="py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
+                            [ngClass]="editSize() === s
+                              ? 'bg-[#3d2413] text-white shadow-sm'
+                              : 'text-[#665245] hover:bg-white/70'">
+                            {{ s }} ingredients ({{ draft[s].length }})
+                          </button>
+                        }
+                      </div>
+
+                      <p class="text-[11px] text-[#8c6d53]">
+                        Editing the <span class="font-bold text-[#3d2413]">{{ editSize() }}</span> recipe. These amounts are the only ones deducted when a {{ editSize() }} order is completed.
+                      </p>
+
+                      @if (editSize() === 'Grande') {
+                        <button type="button" (click)="copyTallToGrande()"
+                          class="w-full py-2 rounded-xl bg-white hover:bg-[#f2ebd9] text-[#5c3a21] border border-[#e3d8c4] font-bold text-[11px] transition-all cursor-pointer">
+                          ⧉ Copy the Tall ingredients here (then change the amounts)
+                        </button>
+                      }
+                    }
+
+                    @for (l of draft[editSize()]; track $index) {
+                      <div class="bg-[#f8f6f0] border border-[#e3d8c4] rounded-2xl p-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+
+                          <div class="sm:col-span-7">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Ingredient</label>
+                            <select [(ngModel)]="l.inventory_item_id"
+                              class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]">
+                              <option [ngValue]="null" disabled>Select…</option>
+                              @for (i of items(); track i.id) {
+                                <option [ngValue]="i.id">{{ i.name }} ({{ i.unit }})</option>
+                              }
+                            </select>
+                          </div>
+
+                          <div class="sm:col-span-4">
+                            <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">
+                              {{ hasSizes(p) ? editSize() + ' amount' : 'Amount' }}{{ draftUnit(l.inventory_item_id) ? ' (' + draftUnit(l.inventory_item_id) + ')' : '' }}
+                            </label>
+                            <input type="number" min="0" step="0.01" [(ngModel)]="l.amount" placeholder="e.g. 20"
+                              class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+                          </div>
+
+                          <div class="sm:col-span-1">
+                            <button type="button" (click)="removeLine($index)" title="Remove"
+                              class="w-full py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs cursor-pointer flex items-center justify-center">
+                              ✕
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    }
+
+                    <button type="button" (click)="addLine()"
+                      class="w-full py-2.5 rounded-xl bg-white hover:bg-[#f2ebd9] text-[#5c3a21] border border-dashed border-[#d4a373] font-bold text-xs transition-all cursor-pointer">
+                      + Add {{ hasSizes(p) ? editSize() : '' }} ingredient
+                    </button>
+
+                    <div class="flex gap-2 pt-1">
+                      <button type="button" [disabled]="recipeSaving()" (click)="saveRecipe(p)"
+                        class="flex-1 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 active:scale-95 text-white font-bold text-xs transition-all cursor-pointer">
+                        {{ recipeSaving() ? 'Saving…' : 'Save ingredients' }}
+                      </button>
+                      <button type="button" (click)="cancelRecipe()"
+                        class="flex-1 py-2.5 rounded-xl bg-white hover:bg-[#f2ebd9] text-[#665245] border border-[#e3d8c4] font-bold text-xs transition-all cursor-pointer">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    } @else {
+
+      <!-- ===================== ALL INGREDIENTS ===================== -->
+      @if (visibleItems().length === 0) {
+        <div class="text-center py-20 bg-white border border-[#e3d8c4] rounded-3xl max-w-md mx-auto shadow-sm">
+          <span class="text-4xl block mb-2 opacity-40">📦</span>
+          <h3 class="font-bold text-[#3d2413] text-base">No ingredients found</h3>
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          @for (i of visibleItems(); track i.id) {
+            <div class="bg-white rounded-3xl p-5 border shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+              [ngClass]="i.is_low || i.quantity <= 0 ? 'border-amber-300' : 'border-[#e8dfce]'">
+
+              <div>
+                <div class="flex items-start justify-between gap-3 pb-3 border-b border-[#f2ebd9] mb-3">
+                  <div class="min-w-0">
+                    <h3 class="font-black text-[#3d2413] text-base truncate">{{ i.name }}</h3>
+                    <p class="text-[11px] text-[#8c6d53] mt-0.5">
+                      {{ usedIn(i).length > 0 ? 'Used in ' + usedIn(i).length + ' menu item(s)' : 'Not used in any recipe' }}
+                    </p>
+                  </div>
+
+                  <span class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shrink-0"
+                    [ngClass]="{
+                      'bg-red-100 text-red-800 border border-red-200': i.quantity <= 0,
+                      'bg-amber-100 text-amber-800 border border-amber-200': i.quantity > 0 && i.is_low,
+                      'bg-emerald-100 text-emerald-800 border border-emerald-200': i.quantity > 0 && !i.is_low
+                    }">
+                    {{ i.quantity <= 0 ? 'Out of stock' : i.is_low ? 'Low' : 'OK' }}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3 text-center">
+                  <div class="bg-[#f8f6f0] rounded-2xl p-3">
+                    <div class="text-[9px] font-bold uppercase text-[#8c6d53]">In stock</div>
+                    <div class="text-lg font-black text-[#3d2413] mt-0.5">{{ i.quantity | number: '1.0-2' }}
+                      <span class="text-xs font-bold text-[#8c6d53]">{{ i.unit }}</span>
+                    </div>
+                  </div>
+                  <div class="bg-[#f8f6f0] rounded-2xl p-3">
+                    <div class="text-[9px] font-bold uppercase text-[#8c6d53]">Alert at</div>
+                    <div class="text-lg font-black text-[#3d2413] mt-0.5">{{ i.low_stock_threshold | number: '1.0-2' }}
+                      <span class="text-xs font-bold text-[#8c6d53]">{{ i.unit }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                @if (usedIn(i).length > 0) {
+                  <div class="flex flex-wrap gap-1.5 mb-3">
+                    @for (n of usedIn(i); track n) {
+                      <span class="px-2 py-0.5 rounded-full bg-[#f3ead8] text-[#603c22] text-[10px] font-bold">{{ n }}</span>
+                    }
+                  </div>
+                }
+              </div>
+
+              <div>
+                <div class="flex gap-2 pt-3 border-t border-[#e8dfce]">
+                  <button type="button" (click)="startAdjust(i)"
+                    class="flex-1 py-2.5 px-3 rounded-xl bg-[#5c3a21] hover:bg-[#3d2413] active:scale-95 text-white font-bold text-xs transition-all cursor-pointer shadow-xs">
+                    Restock / adjust
+                  </button>
+                  <button type="button" (click)="startEditItem(i)"
+                    class="py-2.5 px-4 rounded-xl bg-white hover:bg-[#f2ebd9] text-[#665245] border border-[#e3d8c4] font-bold text-xs transition-all cursor-pointer">
+                    Edit
+                  </button>
+                  <button type="button" (click)="removeItem(i)" title="Delete"
+                    class="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs transition-all cursor-pointer">
+                    🗑
+                  </button>
+                </div>
+
+                @if (adjustingId() === i.id) {
+                  <div class="mt-3 bg-[#f8f6f0] border border-[#e3d8c4] rounded-2xl p-4 space-y-3">
+                    <div>
+                      <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Type</label>
+                      <select [(ngModel)]="adjType"
+                        class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]">
+                        <option value="in">Restock (add)</option>
+                        <option value="out">Use / waste (subtract)</option>
+                        <option value="adjustment">Set count (physical count)</option>
+                      </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Quantity</label>
+                        <input type="number" min="0" step="0.01" [(ngModel)]="adjQty"
+                          class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+                      </div>
+                      <div>
+                        <label class="block text-[10px] font-bold uppercase tracking-wider text-[#8c6d53] mb-1">Reason</label>
+                        <input [(ngModel)]="adjReason" placeholder="Delivery, spoilage…"
+                          class="w-full px-3 py-2.5 rounded-xl border border-[#e3d8c4] bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]" />
+                      </div>
+                    </div>
+                    <div class="flex gap-2">
+                      <button type="button" (click)="saveAdjust(i)"
+                        class="flex-1 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 active:scale-95 text-white font-bold text-xs transition-all cursor-pointer">
+                        Save
+                      </button>
+                      <button type="button" (click)="adjustingId.set(null)"
+                        class="flex-1 py-2.5 rounded-xl bg-white hover:bg-[#f2ebd9] text-[#665245] border border-[#e3d8c4] font-bold text-xs transition-all cursor-pointer">
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

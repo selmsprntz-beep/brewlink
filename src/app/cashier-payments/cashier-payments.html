@@ -1,0 +1,62 @@
+<div class="min-h-screen bg-[#1c140e] p-6 text-[#f5efe6]">
+  <h1 class="mb-2 text-2xl font-bold">GCash Payment Verification</h1>
+  <p class="mb-6 text-sm text-stone-400">
+    Check the actual GCash transaction records before confirming payment.
+  </p>
+
+  @if (message) {
+    <p class="mb-4 rounded-lg bg-stone-800 p-3">{{ message }}</p>
+  }
+
+  @if (loading) {
+    <p>Loading payments...</p>
+  } @else if (payments.length === 0) {
+    <p class="rounded-xl border border-stone-700 p-5">
+      No pending GCash payments.
+    </p>
+  } @else {
+    <div class="space-y-4">
+      @for (payment of payments; track payment.id) {
+        <div class="rounded-xl border border-stone-700 bg-stone-900 p-5">
+          <div class="flex flex-wrap justify-between gap-3">
+            <div>
+              <h2 class="font-semibold">
+                Order #{{ payment.order?.order_number ?? payment.order_id }}
+              </h2>
+              <p class="text-sm text-stone-400">
+                {{ payment.order?.customer_name ?? 'Customer' }}
+              </p>
+            </div>
+
+            <p class="text-xl font-bold">
+              {{ payment.amount | currency:'PHP':'symbol':'1.2-2' }}
+            </p>
+          </div>
+
+          <div class="my-4 space-y-1 text-sm">
+            <p>Reference: {{ payment.reference_no }}</p>
+            <p>Status: {{ payment.status }}</p>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              type="button"
+              (click)="verify(payment)"
+              class="rounded-lg bg-green-700 px-4 py-2 font-semibold"
+            >
+              Confirm Verified Payment
+            </button>
+
+            <button
+              type="button"
+              (click)="reject(payment)"
+              class="rounded-lg border border-red-700 px-4 py-2"
+            >
+              Reject / Follow Up
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

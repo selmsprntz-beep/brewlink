@@ -1,0 +1,173 @@
+<div class="min-h-screen bg-[#f8f6f0] text-[#2c221e] p-4 sm:p-6 lg:p-8 font-sans">
+
+  <!-- Header -->
+  <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h2 class="text-2xl sm:text-3xl font-black text-[#3d2413] tracking-tight">Staff POS · Payments</h2>
+      <p class="text-xs text-[#8c6d53] mt-1">All recorded payments. Record new ones from the Orders page.</p>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      @for (m of methods; track m.value) {
+        <button
+          type="button"
+          (click)="method.set(m.value)"
+          class="px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer shadow-xs"
+          [ngClass]="method() === m.value
+            ? 'bg-[#3d2413] text-white shadow-md'
+            : 'bg-white text-[#665245] border border-[#e3d8c4] hover:bg-[#f2ebd9]'"
+        >
+          {{ m.label }}
+        </button>
+      }
+      <button
+        type="button"
+        (click)="load()"
+        class="px-4 py-2 rounded-full text-xs font-bold bg-[#5c3a21] hover:bg-[#3d2413] text-white transition-all cursor-pointer shadow-xs"
+      >
+        ↻ Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto">
+
+    <!-- Summary cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-3xl p-5 border border-[#e8dfce] shadow-sm">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">Today</div>
+        <div class="text-2xl font-black text-[#3d2413] mt-1">{{ todayTotal() | currency: 'PHP' }}</div>
+      </div>
+      <div class="bg-white rounded-3xl p-5 border border-[#e8dfce] shadow-sm">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">All time (verified)</div>
+        <div class="text-2xl font-black text-[#3d2413] mt-1">{{ allTotal() | currency: 'PHP' }}</div>
+      </div>
+      <div class="bg-white rounded-3xl p-5 border border-[#e8dfce] shadow-sm">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-[#8c6d53]">Pending GCash</div>
+        <div class="text-2xl font-black mt-1" [ngClass]="pendingCount() > 0 ? 'text-amber-700' : 'text-[#3d2413]'">
+          {{ pendingCount() }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Error -->
+    @if (error()) {
+      <div class="mb-6 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs text-red-800 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2">
+          <span>⚠️</span>
+          <span class="font-bold">{{ error() }}</span>
+        </div>
+        <button (click)="error.set('')" class="text-red-500 font-bold hover:text-red-800 cursor-pointer">✕</button>
+      </div>
+    }
+
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="text-center py-16">
+        <p class="text-[#5c3a21] animate-pulse text-sm font-semibold">Loading payments…</p>
+      </div>
+    }
+
+    <!-- Empty -->
+    @else if (visible().length === 0) {
+      <div class="text-center py-20 bg-white border border-[#e3d8c4] rounded-3xl max-w-md mx-auto shadow-sm">
+        <span class="text-4xl block mb-2 opacity-40">💳</span>
+        <h3 class="font-bold text-[#3d2413] text-base">No payments</h3>
+        <p class="text-xs text-[#8c6d53] mt-1">No payments recorded yet. Record them from the Orders page.</p>
+      </div>
+    }
+
+    @else {
+      <!-- Desktop table -->
+      <div class="hidden md:block bg-white rounded-3xl border border-[#e8dfce] shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-[#f2ebd9] text-[#5c3a21] uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="px-5 py-3 font-black">Date</th>
+                <th class="px-5 py-3 font-black">Order</th>
+                <th class="px-5 py-3 font-black">Customer</th>
+                <th class="px-5 py-3 font-black">Method</th>
+                <th class="px-5 py-3 font-black">Reference</th>
+                <th class="px-5 py-3 font-black">Status</th>
+                <th class="px-5 py-3 font-black text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-[#f2ebd9]">
+              @for (p of visible(); track p.id) {
+                <tr class="hover:bg-[#faf7f0] transition-colors">
+                  <td class="px-5 py-3.5 text-[#665245] whitespace-nowrap">{{ p.paid_at | date: 'MMM d, h:mm a' }}</td>
+                  <td class="px-5 py-3.5 font-black text-[#3d2413]">{{ p.order?.order_number ?? '—' }}</td>
+                  <td class="px-5 py-3.5 text-[#3d2413] font-semibold">{{ p.order?.customer_name ?? '—' }}</td>
+                  <td class="px-5 py-3.5">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                      [ngClass]="p.method?.toLowerCase() === 'gcash'
+                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                        : 'bg-stone-100 text-stone-700 border border-stone-200'">
+                      {{ p.method }}
+                    </span>
+                  </td>
+                  <td class="px-5 py-3.5 font-mono text-[#665245]">{{ p.reference_no || '—' }}</td>
+                  <td class="px-5 py-3.5">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                      [ngClass]="{
+                        'bg-amber-100 text-amber-800 border border-amber-200': p.status === 'pending',
+                        'bg-red-100 text-red-800 border border-red-200': p.status === 'rejected',
+                        'bg-emerald-100 text-emerald-800 border border-emerald-200': p.status !== 'pending' && p.status !== 'rejected'
+                      }">
+                      {{ p.status ?? 'verified' }}
+                    </span>
+                  </td>
+                  
+                  <td class="px-5 py-3.5 text-right font-black text-[#3d2413] whitespace-nowrap">{{ p.amount | currency: 'PHP' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mobile cards -->
+      <div class="md:hidden space-y-3">
+        @for (p of visible(); track p.id) {
+          <div class="bg-white rounded-3xl p-4 border border-[#e8dfce] shadow-sm">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <div class="min-w-0">
+                <div class="font-black text-[#3d2413] text-sm">{{ p.order?.order_number ?? '—' }}</div>
+                <div class="text-xs text-[#8c6d53]">{{ p.order?.customer_name ?? '—' }}</div>
+              </div>
+              <div class="text-right shrink-0">
+                <div class="font-black text-[#3d2413]">{{ p.amount | currency: 'PHP' }}</div>
+                <div class="text-[10px] text-[#8c6d53]">{{ p.paid_at | date: 'MMM d, h:mm a' }}</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap pt-2 border-t border-[#f2ebd9]">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                [ngClass]="p.method?.toLowerCase() === 'gcash'
+                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                  : 'bg-stone-100 text-stone-700 border border-stone-200'">
+                {{ p.method }}
+              </span>
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                [ngClass]="{
+                  'bg-amber-100 text-amber-800 border border-amber-200': p.status === 'pending',
+                  'bg-red-100 text-red-800 border border-red-200': p.status === 'rejected',
+                  'bg-emerald-100 text-emerald-800 border border-emerald-200': p.status !== 'pending' && p.status !== 'rejected'
+                }">
+                {{ p.status ?? 'verified' }}
+              </span>
+              @if (p.reference_no) {
+                <span class="text-[11px] font-mono text-[#665245]">Ref: {{ p.reference_no }}</span>
+              }
+            </div>
+
+            @if (p.receiver?.name) {
+              <div class="text-[11px] text-[#8c6d53] mt-2">Received by {{ p.receiver?.name }}</div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>
