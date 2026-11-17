@@ -102,7 +102,7 @@ export class CustomerHome implements OnInit {
   cartOpen = signal(false);
 
   customerName = '';
-  orderType: 'dine_in' | 'takeout' = 'dine_in';
+  orderType: 'dine_in' | 'takeout' = 'takeout';
   paymentMethod: 'cash' | 'gcash' = 'cash';
   notes = '';
 
@@ -153,13 +153,15 @@ export class CustomerHome implements OnInit {
   );
 
   ngOnInit(): void {
-    this.tableToken = currentTable(
-      this.route.snapshot.queryParamMap.get('table')
-    );
+    const urlTable = this.route.snapshot.queryParamMap.get('table');
+    this.tableToken = currentTable(urlTable);
 
     if (this.tableToken) {
       this.api.tableByToken(this.tableToken).subscribe({
-        next: (table) => this.table.set(table),
+        next: (table) => {
+          this.table.set(table);
+          this.orderType = 'dine_in';
+        },
         error: (err) => {
           if (err?.status === 404) {
             forgetTable();
@@ -173,6 +175,11 @@ export class CustomerHome implements OnInit {
         },
       });
     } else {
+      // Gi-fix diri: Kung gi-type ra ang URL nga walay ?table=..., 
+      // i-clear gyud ang table ug i-set dayon sa 'takeout'
+      forgetTable();
+      this.tableToken = null;
+      this.table.set(null);
       this.orderType = 'takeout';
     }
 
@@ -597,7 +604,6 @@ export class CustomerHome implements OnInit {
   }
 
   private sendOrder(referenceNo: string | null): void {
-    // Gamiton ang gipili nga paymentMethod ('gcash' o 'cash')
     const selectedMethod = this.paymentMethod;
 
     const payload = {
@@ -633,7 +639,6 @@ export class CustomerHome implements OnInit {
 
         const savedOrderNumber = String(orderNumber);
 
-        // I-save ang order status sa local storage
         if (selectedMethod === 'gcash') {
           localStorage.setItem(`gcash_done_${savedOrderNumber}`, 'true');
         }
