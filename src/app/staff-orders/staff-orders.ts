@@ -1,4 +1,3 @@
-
 import { CurrencyPipe, DatePipe, NgClass } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -58,7 +57,10 @@ export class StaffOrders implements OnInit, OnDestroy {
   // =====================================
 
   loadOrders(): void {
-    this.api.orders(this.selectedFilter).subscribe({
+    // The API has no "all" status: leave the filter out to get every order.
+    const status = this.selectedFilter === 'all' ? undefined : this.selectedFilter;
+
+    this.api.orders(status).subscribe({
       next: (data: Order[]) => {
         this.orders.set(Array.isArray(data) ? data : []);
         this.loading = false;
